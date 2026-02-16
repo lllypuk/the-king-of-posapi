@@ -118,6 +118,16 @@
                 overflow: hidden;
             }
 
+            #terminal-display.processing {
+                font-size: 11px;
+                animation: pulse-glow 0.7s ease-in-out infinite;
+            }
+
+            @keyframes pulse-glow {
+                0%, 100% { box-shadow: 0 0 6px rgba(83, 215, 105, 0.3); }
+                50% { box-shadow: 0 0 18px rgba(83, 215, 105, 0.8); }
+            }
+
             #terminal-display.error {
                 border-color: #e94560;
                 color: #e94560;
@@ -468,8 +478,9 @@
             let customers = [];
             let currentIdx = 0;
             let totalEarned = 0;
-            let gameState = "start"; // start | playing | animating | win
+            let gameState = "start"; // start | playing | animating | processing | win
             let inputValue = ""; // numpad input state
+            let particles = [];
 
             // DOM elements
             const canvas = document.getElementById("game-canvas");
@@ -669,11 +680,16 @@
                 drawCounter();
 
                 // Draw items on counter for current customer
-                if (gameState === "playing" && currentIdx < customers.length) {
+                if ((gameState === "playing" || gameState === "processing") && currentIdx < customers.length) {
                     drawItems(customers[currentIdx].items);
                 }
 
                 drawQueue();
+
+                // Draw flying particles
+                if (particles.length > 0) {
+                    updateAndDrawParticles();
+                }
             }
 
             // ============================================================
@@ -730,6 +746,113 @@
                 setTimeout(() => feedbackEl.classList.remove("show"), duration);
             }
 
+            // ============================================================
+            // PROCESSING ANIMATION
+            // ============================================================
+            function spawnParticles(direction) {
+                for (let i = 0; i < 15; i++) {
+                    particles.push({
+                        x: 720 + Math.random() * 40,
+                        y: 240 + Math.random() * 30,
+                        vx: (Math.random() - 0.5) * 3,
+                        vy: direction === "up" ? -(2 + Math.random() * 3) : (2 + Math.random() * 3),
+                        life: 60 + Math.random() * 30,
+                    });
+                }
+            }
+
+            function updateAndDrawParticles() {
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                    const alpha = Math.max(0, p.life / 90);
+                    ctx.fillStyle = `rgba(83, 215, 105, ${alpha})`;
+                    ctx.fillRect(p.x, p.y, 4, 4);
+                    if (p.life <= 0) particles.splice(i, 1);
+                }
+            }
+
+            function startProcessingAnimation(input, correct) {
+                gameState = "processing";
+                terminalDisplay.classList.add("processing");
+
+                const stages = [
+                    "ОТПРАВКА...",
+                    "[██░░░░░░]",
+                    "ПРОВЕРКА...",
+                    "[█████░░░]",
+                    "СПИСАНИЕ...",
+                    "[████████]",
+                ];
+                let step = 0;
+
+                // Spawn upward particles immediately
+                spawnParticles("up");
+
+                terminalDisplay.textContent = stages[0];
+                playBeep(600, 0.03);
+
+                const iv = setInterval(() => {
+                    step++;
+                    if (step >= stages.length) {
+                        clearInterval(iv);
+                        terminalDisplay.classList.remove("processing");
+                        resolvePayment(input, correct);
+                        return;
+                    }
+                    terminalDisplay.textContent = stages[step];
+                    playBeep(600, 0.03);
+                    // Spawn downward particles for phase 2
+                    if (step === 3) spawnParticles("down");
+                }, 350);
+            }
+
+            function resolvePayment(input, correct) {
+                if (input === correct) {
+                    playSuccess();
+                    showFeedback("✅");
+                    terminalDisplay.classList.add("success");
+                    totalEarned += correct;
+                    setMessage("Верно! +" + correct + " ₽");
+                    updateUI();
+
+                    customers[currentIdx].targetX = 1100;
+                    gameState = "animating";
+
+                    setTimeout(() => {
+                        terminalDisplay.classList.remove("success");
+                        currentIdx++;
+
+                        if (currentIdx >= customers.length) {
+                            gameState = "win";
+                            winTotal.textContent = "Заработано: " + totalEarned + " ₽";
+                            winScreen.classList.remove("hidden");
+                            return;
+                        }
+
+                        customers[currentIdx].targetX = 200;
+                        gameState = "playing";
+                        inputValue = "";
+                        updateTerminalDisplay();
+                        setMessage("Следующий покупатель! Считай сумму!");
+                        updateUI();
+                    }, 1200);
+                } else {
+                    playError();
+                    showFeedback("❌");
+                    terminalDisplay.classList.add("error");
+                    setMessage("Неверно! Попробуй ещё раз!");
+                    setTimeout(() => {
+                        terminalDisplay.classList.remove("error");
+                        inputValue = "";
+                        updateTerminalDisplay();
+                        gameState = "playing";
+                    }, 600);
+                }
+            }
+
             function checkPayment() {
                 if (gameState !== "playing") return;
                 if (currentIdx >= customers.length) return;
@@ -743,52 +866,7 @@
                     return;
                 }
 
-                if (input === correct) {
-                    // Success!
-                    playSuccess();
-                    showFeedback("✅");
-                    terminalDisplay.classList.add("success");
-                    totalEarned += correct;
-                    setMessage("Верно! +" + correct + " ₽");
-                    updateUI();
-
-                    // Move customer away
-                    customers[currentIdx].targetX = 1100;
-                    gameState = "animating";
-
-                    setTimeout(() => {
-                        terminalDisplay.classList.remove("success");
-                        currentIdx++;
-
-                        if (currentIdx >= customers.length) {
-                            // Win!
-                            gameState = "win";
-                            winTotal.textContent =
-                                "Заработано: " + totalEarned + " ₽";
-                            winScreen.classList.remove("hidden");
-                            return;
-                        }
-
-                        // Next customer
-                        customers[currentIdx].targetX = 200;
-                        gameState = "playing";
-                        inputValue = "";
-                        updateTerminalDisplay();
-                        setMessage("Следующий покупатель! Считай сумму!");
-                        updateUI();
-                    }, 1200);
-                } else {
-                    // Error
-                    playError();
-                    showFeedback("❌");
-                    terminalDisplay.classList.add("error");
-                    setMessage("Неверно! Попробуй ещё раз!");
-                    setTimeout(() => {
-                        terminalDisplay.classList.remove("error");
-                        inputValue = "";
-                        updateTerminalDisplay();
-                    }, 600);
-                }
+                startProcessingAnimation(input, correct);
             }
 
             // ============================================================
