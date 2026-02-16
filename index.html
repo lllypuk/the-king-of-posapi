@@ -2,7 +2,7 @@
 <html lang="ru">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <title>Король POSAPI</title>
         <link
             href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
@@ -21,9 +21,11 @@
                 justify-content: center;
                 align-items: center;
                 min-height: 100vh;
+                min-height: 100dvh;
                 font-family: "Press Start 2P", monospace;
                 image-rendering: pixelated;
                 overflow: hidden;
+                touch-action: manipulation;
             }
 
             #game-wrapper {
@@ -35,6 +37,7 @@
                 border-radius: 4px;
                 overflow: hidden;
                 box-shadow: 0 0 40px rgba(233, 69, 96, 0.3);
+                transform-origin: center center;
             }
 
             /* === TOP BAR === */
@@ -262,9 +265,51 @@
             #feedback.show {
                 opacity: 1;
             }
+
+            /* === MOBILE === */
+            @media (max-width: 960px) {
+                #terminal-label { display: none; }
+            }
+
+            /* Landscape hint for portrait phones */
+            #rotate-hint {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: #1a1a2e;
+                z-index: 9999;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 20px;
+                color: #f5a623;
+                font-family: "Press Start 2P", monospace;
+                font-size: 12px;
+                text-align: center;
+                line-height: 2;
+            }
+
+            #rotate-hint .phone-icon {
+                font-size: 64px;
+                animation: rotate-phone 2s ease-in-out infinite;
+            }
+
+            @keyframes rotate-phone {
+                0%, 100% { transform: rotate(0deg); }
+                50% { transform: rotate(90deg); }
+            }
+
+            @media (max-width: 640px) and (orientation: portrait) {
+                #rotate-hint { display: flex; }
+            }
         </style>
     </head>
     <body>
+        <div id="rotate-hint">
+            <div class="phone-icon">📱</div>
+            <div>Переверни<br>телефон</div>
+        </div>
+
         <div id="game-wrapper">
             <!-- Top bar -->
             <div id="top-bar">
@@ -776,6 +821,30 @@
             sumInput.addEventListener("input", () => {
                 sumInput.value = sumInput.value.replace(/[^0-9]/g, "");
             });
+
+            // ============================================================
+            // RESPONSIVE SCALING
+            // ============================================================
+            const gameWrapper = document.getElementById('game-wrapper');
+
+            function resizeGame() {
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const gameW = 960;
+                const gameH = 640;
+                const scaleX = vw / gameW;
+                const scaleY = vh / gameH;
+                const scale = Math.min(scaleX, scaleY);
+                gameWrapper.style.transform = 'scale(' + scale + ')';
+                gameWrapper.style.transformOrigin = 'top left';
+                gameWrapper.style.position = 'absolute';
+                gameWrapper.style.left = Math.max(0, (vw - gameW * scale) / 2) + 'px';
+                gameWrapper.style.top = Math.max(0, (vh - gameH * scale) / 2) + 'px';
+            }
+
+            window.addEventListener('resize', resizeGame);
+            window.addEventListener('orientationchange', () => setTimeout(resizeGame, 100));
+            resizeGame();
 
             // Start with initial render
             drawScene();
