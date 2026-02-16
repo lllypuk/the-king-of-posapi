@@ -74,96 +74,125 @@
                 top: 52px;
                 left: 0;
                 width: 960px;
-                height: 480px;
+                height: 588px;
             }
 
-            /* === BOTTOM BAR === */
-            #bottom-bar {
+            /* === TERMINAL PANEL === */
+            #terminal-panel {
                 position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                height: 108px;
-                background: #16213e;
-                border-top: 3px solid #e94560;
+                top: 60px;
+                right: 8px;
+                width: 210px;
+                background: #1a1a3a;
+                border: 3px solid #53d769;
+                border-radius: 6px;
+                z-index: 15;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 10px 8px;
+                gap: 8px;
+                box-shadow: 0 0 20px rgba(83, 215, 105, 0.15);
+            }
+
+            #terminal-title {
+                color: #53d769;
+                font-size: 8px;
+                letter-spacing: 1px;
+                opacity: 0.7;
+            }
+
+            #terminal-display {
+                width: 100%;
+                height: 52px;
+                background: #0a0a23;
+                border: 2px solid #53d769;
+                border-radius: 3px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 16px;
-                z-index: 10;
-            }
-
-            #terminal-box {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-            }
-
-            #terminal-label {
-                color: #aaa;
-                font-size: 9px;
-            }
-
-            #sum-input {
-                width: 160px;
-                height: 48px;
-                background: #0a0a23;
-                border: 3px solid #53d769;
-                border-radius: 4px;
                 color: #53d769;
                 font-family: "Press Start 2P", monospace;
-                font-size: 18px;
-                text-align: center;
-                outline: none;
-                caret-color: #53d769;
+                font-size: 22px;
+                text-shadow: 0 0 8px rgba(83, 215, 105, 0.5);
+                overflow: hidden;
             }
 
-            #sum-input:focus {
-                border-color: #fff;
-                box-shadow: 0 0 12px rgba(83, 215, 105, 0.4);
-            }
-
-            #sum-input.error {
+            #terminal-display.error {
                 border-color: #e94560;
+                color: #e94560;
+                text-shadow: 0 0 8px rgba(233, 69, 96, 0.5);
                 animation: shake 0.4s ease;
             }
 
-            #sum-input.success {
+            #terminal-display.success {
                 border-color: #53d769;
                 box-shadow: 0 0 20px rgba(83, 215, 105, 0.6);
             }
 
-            #pay-btn {
-                height: 48px;
-                padding: 0 24px;
-                background: #53d769;
-                border: 3px solid #3ab054;
-                border-radius: 4px;
-                color: #0a0a23;
-                font-family: "Press Start 2P", monospace;
-                font-size: 11px;
-                cursor: pointer;
-                transition: transform 0.1s;
+            #numpad {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
+                width: 100%;
             }
 
-            #pay-btn:hover {
-                transform: scale(1.05);
+            .num-btn {
+                height: 52px;
+                background: #2a2a4a;
+                border: 2px solid #444;
+                border-radius: 4px;
+                color: #ddd;
+                font-family: "Press Start 2P", monospace;
+                font-size: 16px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                user-select: none;
+                -webkit-user-select: none;
+                transition: transform 0.08s, background 0.08s;
             }
-            #pay-btn:active {
-                transform: scale(0.95);
+
+            .num-btn:active {
+                transform: scale(0.92);
+                background: #3a3a5a;
+            }
+
+            .num-btn.btn-clear {
+                background: #4a2020;
+                border-color: #e94560;
+                color: #e94560;
+                font-size: 14px;
+            }
+
+            .num-btn.btn-clear:active {
+                background: #6a3030;
+            }
+
+            .num-btn.btn-pay {
+                background: #1a4a2a;
+                border-color: #53d769;
+                color: #53d769;
+                font-size: 18px;
+            }
+
+            .num-btn.btn-pay:active {
+                background: #2a6a3a;
             }
 
             #message {
                 position: absolute;
-                bottom: 112px;
+                top: 56px;
                 left: 0;
-                right: 0;
+                right: 220px;
                 text-align: center;
                 color: #f5a623;
                 font-size: 11px;
                 z-index: 20;
                 pointer-events: none;
                 text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+                padding: 4px;
             }
 
             /* === OVERLAYS === */
@@ -266,11 +295,6 @@
                 opacity: 1;
             }
 
-            /* === MOBILE === */
-            @media (max-width: 960px) {
-                #terminal-label { display: none; }
-            }
-
             /* Landscape hint for portrait phones */
             #rotate-hint {
                 display: none;
@@ -318,7 +342,7 @@
             </div>
 
             <!-- Game canvas -->
-            <canvas id="game-canvas" width="960" height="480"></canvas>
+            <canvas id="game-canvas" width="960" height="588"></canvas>
 
             <!-- Message -->
             <div id="message"></div>
@@ -326,17 +350,23 @@
             <!-- Feedback emoji -->
             <div id="feedback"></div>
 
-            <!-- Bottom bar: terminal -->
-            <div id="bottom-bar">
-                <div id="terminal-box">
-                    <div id="terminal-label">ТЕРМИНАЛ<br />ОПЛАТЫ</div>
-                    <input
-                        type="number"
-                        id="sum-input"
-                        placeholder="₽"
-                        autofocus
-                    />
-                    <button id="pay-btn">ОПЛАТИТЬ</button>
+            <!-- Terminal numpad panel -->
+            <div id="terminal-panel">
+                <div id="terminal-title">ТЕРМИНАЛ</div>
+                <div id="terminal-display">_ ₽</div>
+                <div id="numpad">
+                    <button class="num-btn" data-val="1">1</button>
+                    <button class="num-btn" data-val="2">2</button>
+                    <button class="num-btn" data-val="3">3</button>
+                    <button class="num-btn" data-val="4">4</button>
+                    <button class="num-btn" data-val="5">5</button>
+                    <button class="num-btn" data-val="6">6</button>
+                    <button class="num-btn" data-val="7">7</button>
+                    <button class="num-btn" data-val="8">8</button>
+                    <button class="num-btn" data-val="9">9</button>
+                    <button class="num-btn btn-clear" data-val="C">C</button>
+                    <button class="num-btn" data-val="0">0</button>
+                    <button class="num-btn btn-pay" data-val="OK">✓</button>
                 </div>
             </div>
 
@@ -439,6 +469,7 @@
             let currentIdx = 0;
             let totalEarned = 0;
             let gameState = "start"; // start | playing | animating | win
+            let inputValue = ""; // numpad input state
 
             // DOM elements
             const canvas = document.getElementById("game-canvas");
@@ -447,13 +478,24 @@
             const counterDisplay = document.getElementById("customer-counter");
             const messageEl = document.getElementById("message");
             const feedbackEl = document.getElementById("feedback");
-            const sumInput = document.getElementById("sum-input");
-            const payBtn = document.getElementById("pay-btn");
+            const terminalDisplay = document.getElementById("terminal-display");
+            const terminalPanel = document.getElementById("terminal-panel");
             const startScreen = document.getElementById("start-screen");
             const winScreen = document.getElementById("win-screen");
             const startBtn = document.getElementById("start-btn");
             const restartBtn = document.getElementById("restart-btn");
             const winTotal = document.getElementById("win-total");
+
+            // ============================================================
+            // TERMINAL DISPLAY
+            // ============================================================
+            function updateTerminalDisplay() {
+                if (inputValue.length > 0) {
+                    terminalDisplay.textContent = inputValue + " ₽";
+                } else {
+                    terminalDisplay.textContent = "_ ₽";
+                }
+            }
 
             // ============================================================
             // CUSTOMER GENERATION
@@ -539,55 +581,6 @@
                 ctx.fillRect(573, 268, 70, 48);
             }
 
-            function drawTerminal() {
-                // Terminal device on the right
-                ctx.fillStyle = "#2a2a4a";
-                ctx.fillRect(750, 200, 120, 180);
-                ctx.strokeStyle = "#53d769";
-                ctx.lineWidth = 2;
-                ctx.strokeRect(750, 200, 120, 180);
-
-                // Terminal screen
-                ctx.fillStyle = "#0a0a23";
-                ctx.fillRect(762, 212, 96, 50);
-
-                // Terminal text
-                ctx.fillStyle = "#53d769";
-                ctx.font = '8px "Press Start 2P"';
-                ctx.fillText("ТЕРМИНАЛ", 768, 230);
-
-                if (gameState === "playing" && currentIdx < customers.length) {
-                    const inputVal = sumInput.value;
-                    if (inputVal.length > 0) {
-                        ctx.fillStyle = "#53d769";
-                        ctx.font = '18px "Press Start 2P"';
-                        ctx.fillText(inputVal + " ₽", 770, 252);
-                    } else {
-                        ctx.fillStyle = "#f5a623";
-                        ctx.font = '10px "Press Start 2P"';
-                        ctx.fillText("ВВЕДИТЕ", 775, 250);
-                        ctx.fillText("СУММУ", 780, 262);
-                    }
-                }
-
-                // Keypad dots
-                ctx.fillStyle = "#444";
-                for (let r = 0; r < 3; r++) {
-                    for (let c = 0; c < 3; c++) {
-                        ctx.fillRect(772 + c * 28, 280 + r * 28, 20, 20);
-                    }
-                }
-                // Numbers on keypad
-                ctx.fillStyle = "#aaa";
-                ctx.font = '9px "Press Start 2P"';
-                for (let r = 0; r < 3; r++) {
-                    for (let c = 0; c < 3; c++) {
-                        const num = r * 3 + c + 1;
-                        ctx.fillText(String(num), 777 + c * 28, 296 + r * 28);
-                    }
-                }
-            }
-
             function drawItems(items) {
                 const startX = 310;
                 const y = 275;
@@ -607,7 +600,7 @@
 
             function drawFloor() {
                 // Checkered floor
-                for (let row = 0; row < 6; row++) {
+                for (let row = 0; row < 12; row++) {
                     for (let col = 0; col < 24; col++) {
                         ctx.fillStyle =
                             (row + col) % 2 === 0 ? "#1a2744" : "#162038";
@@ -644,7 +637,7 @@
             function drawScene() {
                 // Background
                 ctx.fillStyle = "#0f3460";
-                ctx.fillRect(0, 0, 960, 480);
+                ctx.fillRect(0, 0, 960, 588);
 
                 // Wall decoration
                 ctx.fillStyle = "#16213e";
@@ -674,7 +667,6 @@
 
                 drawFloor();
                 drawCounter();
-                drawTerminal();
 
                 // Draw items on counter for current customer
                 if (gameState === "playing" && currentIdx < customers.length) {
@@ -710,8 +702,8 @@
                 updateUI();
                 startScreen.classList.add("hidden");
                 winScreen.classList.add("hidden");
-                sumInput.value = "";
-                sumInput.focus();
+                inputValue = "";
+                updateTerminalDisplay();
                 setMessage("Посчитай сумму товаров и введи на терминале!");
 
                 if (!animFrameId) gameLoop();
@@ -742,7 +734,7 @@
                 if (gameState !== "playing") return;
                 if (currentIdx >= customers.length) return;
 
-                const input = parseInt(sumInput.value, 10);
+                const input = parseInt(inputValue, 10);
                 const correct = customers[currentIdx].total;
 
                 if (isNaN(input) || input === 0) {
@@ -755,7 +747,7 @@
                     // Success!
                     playSuccess();
                     showFeedback("✅");
-                    sumInput.classList.add("success");
+                    terminalDisplay.classList.add("success");
                     totalEarned += correct;
                     setMessage("Верно! +" + correct + " ₽");
                     updateUI();
@@ -765,7 +757,7 @@
                     gameState = "animating";
 
                     setTimeout(() => {
-                        sumInput.classList.remove("success");
+                        terminalDisplay.classList.remove("success");
                         currentIdx++;
 
                         if (currentIdx >= customers.length) {
@@ -780,8 +772,8 @@
                         // Next customer
                         customers[currentIdx].targetX = 200;
                         gameState = "playing";
-                        sumInput.value = "";
-                        sumInput.focus();
+                        inputValue = "";
+                        updateTerminalDisplay();
                         setMessage("Следующий покупатель! Считай сумму!");
                         updateUI();
                     }, 1200);
@@ -789,12 +781,12 @@
                     // Error
                     playError();
                     showFeedback("❌");
-                    sumInput.classList.add("error");
+                    terminalDisplay.classList.add("error");
                     setMessage("Неверно! Попробуй ещё раз!");
                     setTimeout(() => {
-                        sumInput.classList.remove("error");
-                        sumInput.value = "";
-                        sumInput.focus();
+                        terminalDisplay.classList.remove("error");
+                        inputValue = "";
+                        updateTerminalDisplay();
                     }, 600);
                 }
             }
@@ -805,21 +797,51 @@
             startBtn.addEventListener("click", startGame);
             restartBtn.addEventListener("click", startGame);
 
-            payBtn.addEventListener("click", () => {
+            // Numpad button clicks
+            document.getElementById("numpad").addEventListener("click", (e) => {
+                const btn = e.target.closest(".num-btn");
+                if (!btn) return;
+                if (gameState !== "playing") return;
+
+                const val = btn.dataset.val;
                 playKeypress();
-                checkPayment();
+
+                if (val === "C") {
+                    inputValue = "";
+                } else if (val === "OK") {
+                    checkPayment();
+                    return;
+                } else {
+                    // Digit — cap at 3 digits to prevent absurd numbers
+                    if (inputValue.length < 3) {
+                        inputValue += val;
+                    }
+                }
+                updateTerminalDisplay();
             });
 
-            sumInput.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") {
+            // Keyboard support for desktop
+            document.addEventListener("keydown", (e) => {
+                if (gameState !== "playing") return;
+
+                if (e.key >= "0" && e.key <= "9") {
+                    playKeypress();
+                    if (inputValue.length < 3) {
+                        inputValue += e.key;
+                    }
+                    updateTerminalDisplay();
+                } else if (e.key === "Backspace" || e.key === "Delete") {
+                    playKeypress();
+                    inputValue = inputValue.slice(0, -1);
+                    updateTerminalDisplay();
+                } else if (e.key === "Enter") {
                     playKeypress();
                     checkPayment();
+                } else if (e.key === "Escape" || e.key === "c" || e.key === "C") {
+                    playKeypress();
+                    inputValue = "";
+                    updateTerminalDisplay();
                 }
-            });
-
-            // Prevent non-numeric input
-            sumInput.addEventListener("input", () => {
-                sumInput.value = sumInput.value.replace(/[^0-9]/g, "");
             });
 
             // ============================================================
