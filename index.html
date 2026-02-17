@@ -2,7 +2,10 @@
 <html lang="ru">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
         <title>Выбери профессию!</title>
         <link
             href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
@@ -70,7 +73,10 @@
                 justify-content: center;
                 gap: 20px;
                 cursor: pointer;
-                transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+                transition:
+                    transform 0.15s,
+                    box-shadow 0.15s,
+                    border-color 0.15s;
                 text-decoration: none;
                 user-select: none;
                 -webkit-user-select: none;
@@ -117,8 +123,13 @@
             }
 
             @keyframes twinkle {
-                0%, 100% { opacity: 0.2; }
-                50% { opacity: 0.8; }
+                0%,
+                100% {
+                    opacity: 0.2;
+                }
+                50% {
+                    opacity: 0.8;
+                }
             }
 
             /* Landscape hint for portrait phones */
@@ -145,45 +156,80 @@
             }
 
             @keyframes rotate-phone {
-                0%, 100% { transform: rotate(0deg); }
-                50% { transform: rotate(90deg); }
+                0%,
+                100% {
+                    transform: rotate(0deg);
+                }
+                50% {
+                    transform: rotate(90deg);
+                }
             }
 
             @media (max-width: 640px) and (orientation: portrait) {
-                #rotate-hint { display: flex; }
+                #rotate-hint {
+                    display: flex;
+                }
             }
         </style>
     </head>
     <body>
         <div id="rotate-hint">
             <div class="phone-icon">📱</div>
-            <div>Переверни<br>телефон</div>
+            <div>Переверни<br />телефон</div>
         </div>
 
         <div id="menu-wrapper">
             <!-- Decorative stars -->
-            <div class="star" style="top: 40px; left: 80px; animation-delay: 0s;"></div>
-            <div class="star" style="top: 100px; left: 750px; animation-delay: 0.7s;"></div>
-            <div class="star" style="top: 200px; left: 50px; animation-delay: 1.4s;"></div>
-            <div class="star" style="top: 500px; left: 880px; animation-delay: 0.3s;"></div>
-            <div class="star" style="top: 550px; left: 120px; animation-delay: 2.1s;"></div>
-            <div class="star" style="top: 80px; left: 500px; animation-delay: 1.0s;"></div>
-            <div class="star" style="top: 450px; left: 300px; animation-delay: 1.8s;"></div>
-            <div class="star" style="top: 520px; left: 650px; animation-delay: 0.5s;"></div>
+            <div
+                class="star"
+                style="top: 40px; left: 80px; animation-delay: 0s"
+            ></div>
+            <div
+                class="star"
+                style="top: 100px; left: 750px; animation-delay: 0.7s"
+            ></div>
+            <div
+                class="star"
+                style="top: 200px; left: 50px; animation-delay: 1.4s"
+            ></div>
+            <div
+                class="star"
+                style="top: 500px; left: 880px; animation-delay: 0.3s"
+            ></div>
+            <div
+                class="star"
+                style="top: 550px; left: 120px; animation-delay: 2.1s"
+            ></div>
+            <div
+                class="star"
+                style="top: 80px; left: 500px; animation-delay: 1s"
+            ></div>
+            <div
+                class="star"
+                style="top: 450px; left: 300px; animation-delay: 1.8s"
+            ></div>
+            <div
+                class="star"
+                style="top: 520px; left: 650px; animation-delay: 0.5s"
+            ></div>
 
-            <h1>ВЫБЕРИ<br>ПРОФЕССИЮ</h1>
+            <h1>Король POSAPI<br /><br />ВЫБЕРИ<br />ПРОФЕССИЮ</h1>
 
             <div class="cards">
                 <a class="card" href="cashier.html">
                     <div class="card-icon">🏪</div>
                     <div class="card-title">КАССИР</div>
-                    <div class="card-desc">Считай сумму покупок<br>и принимай оплату!</div>
+                    <div class="card-desc">
+                        Считай сумму покупок<br />и принимай оплату!
+                    </div>
                 </a>
 
                 <a class="card" href="backend.html">
                     <div class="card-icon">💻</div>
                     <div class="card-title">ИНЖЕНЕР</div>
-                    <div class="card-desc">Чини серверы и лови<br>баги на проде!</div>
+                    <div class="card-desc">
+                        Чини серверы и лови<br />баги на проде!
+                    </div>
                 </a>
             </div>
         </div>
@@ -192,7 +238,7 @@
             // ============================================================
             // RESPONSIVE SCALING
             // ============================================================
-            const menuWrapper = document.getElementById('menu-wrapper');
+            const menuWrapper = document.getElementById("menu-wrapper");
 
             function resizeMenu() {
                 const vw = window.innerWidth;
@@ -202,15 +248,19 @@
                 const scaleX = vw / gameW;
                 const scaleY = vh / gameH;
                 const scale = Math.min(scaleX, scaleY);
-                menuWrapper.style.transform = 'scale(' + scale + ')';
-                menuWrapper.style.transformOrigin = 'top left';
-                menuWrapper.style.position = 'absolute';
-                menuWrapper.style.left = Math.max(0, (vw - gameW * scale) / 2) + 'px';
-                menuWrapper.style.top = Math.max(0, (vh - gameH * scale) / 2) + 'px';
+                menuWrapper.style.transform = "scale(" + scale + ")";
+                menuWrapper.style.transformOrigin = "top left";
+                menuWrapper.style.position = "absolute";
+                menuWrapper.style.left =
+                    Math.max(0, (vw - gameW * scale) / 2) + "px";
+                menuWrapper.style.top =
+                    Math.max(0, (vh - gameH * scale) / 2) + "px";
             }
 
-            window.addEventListener('resize', resizeMenu);
-            window.addEventListener('orientationchange', () => setTimeout(resizeMenu, 100));
+            window.addEventListener("resize", resizeMenu);
+            window.addEventListener("orientationchange", () =>
+                setTimeout(resizeMenu, 100),
+            );
             resizeMenu();
         </script>
     </body>

@@ -24,10 +24,10 @@ Key technologies used inline:
 ## Games
 
 ### Cashier (cashier.html)
-Player is a cashier. Customers approach with items, player must calculate the total and enter it on a terminal numpad. Game states: `start | playing | animating | processing | win`.
+Player is a cashier. Customers approach with items, player must calculate the total and enter it on a terminal numpad. 6 customers per shift, prices 1–5₽ for easy mental arithmetic. Game states: `start | playing | animating | processing | win`.
 
 ### Backend Engineer (backend.html)
-Player is a backend engineer. Problems appear in 4 zones (top/left/right/bottom), player clicks/taps to fix them before they expire. 3 lives, game ends when all lives are lost. Game states: `start | playing | gameover`.
+Player is a backend engineer. Problems appear in 4 zones (top/left/right/bottom), player clicks/taps to fix them before they expire. 3 lives, increasing difficulty. Game states: `start | playing | gameover | win`. Supports both mouse/touch and keyboard input (W/A/S/D, arrows, 1/2/3/4).
 
 ## Code Structure (per game file)
 
@@ -36,6 +36,7 @@ Each game file's JavaScript is organized into labeled sections:
 - **AUDIO** — Web Audio beep/success/error sounds
 - **GAME STATE** — global state variables
 - **PIXEL ART DRAWING** — Canvas drawing functions
+- **PIXEL ART PROBLEM ICONS** — (backend only) icon rendering for problem types
 - **SCENE RENDERING** — main `drawScene()` compositing all elements
 - **ANIMATION LOOP** — `requestAnimationFrame` game loop
 - **GAME LOGIC** — start, checking, win/lose conditions
@@ -59,7 +60,7 @@ Hosted on GitHub Pages at `https://lllypuk.github.io/the-king-of-posapi/`.
 ## Key Conventions
 
 - All UI text is in Russian
-- Prices are intentionally small (1-5₽) so children aged 5-6 can do the mental arithmetic
-- Games use a fixed 960x640 canvas that scales to fit the viewport
+- Prices are intentionally small (1–5₽) so children aged 5–6 can do the mental arithmetic
+- Games use a fixed 960×640 canvas that scales to fit the viewport
 - Portrait mobile shows a "rotate phone" hint; landscape is required
 - Each game has a "← МЕНЮ" button to return to the main menu
