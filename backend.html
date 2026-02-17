@@ -355,6 +355,7 @@
             let spawnTimer = null;
             let frameTime = 0;
             let serverLedPhase = 0; // for blinking server LEDs
+            let graphFrameCounter = 0; // for slowing down graph updates
 
             // Monitoring graph data
             let graphData = [];
@@ -517,52 +518,82 @@
 
             function drawEngineer(x, y) {
                 const s = 5;
-                // Head
+
+                // === Chair (behind engineer) ===
+                // Chair back
+                ctx.fillStyle = "#383838";
+                ctx.fillRect(x + 7 * s, y + 5 * s, 8 * s, 10 * s);
+                ctx.fillStyle = "#444";
+                ctx.fillRect(x + 8 * s, y + 6 * s, 6 * s, 8 * s);
+                // Chair seat
+                ctx.fillStyle = "#383838";
+                ctx.fillRect(x + 3 * s, y + 14 * s, 10 * s, 2 * s);
+                // Chair base/wheels
+                ctx.fillStyle = "#333";
+                ctx.fillRect(x + 7 * s, y + 16 * s, 2 * s, 3 * s);
+                ctx.fillRect(x + 4 * s, y + 19 * s, 8 * s, 1 * s);
+                // Wheels
+                ctx.fillStyle = "#222";
+                ctx.fillRect(x + 3.5 * s, y + 19.5 * s, 1.5 * s, 1.5 * s);
+                ctx.fillRect(x + 11 * s, y + 19.5 * s, 1.5 * s, 1.5 * s);
+
+                // === Engineer sitting, facing left toward monitor ===
+                // Head (turned left)
                 ctx.fillStyle = "#ffccaa";
-                ctx.fillRect(x + 3 * s, y, 6 * s, 6 * s);
+                ctx.fillRect(x + 3 * s, y + 1 * s, 5 * s, 5 * s);
                 // Hair
                 ctx.fillStyle = "#4a3020";
-                ctx.fillRect(x + 3 * s, y, 6 * s, 2 * s);
-                // Eyes
+                ctx.fillRect(x + 3 * s, y + 0.5 * s, 5 * s, 2 * s);
+                ctx.fillRect(x + 7 * s, y + 1 * s, 1.5 * s, 3 * s); // hair side
+                // Eye (profile - one eye visible, looking left)
                 ctx.fillStyle = "#333";
-                ctx.fillRect(x + 4 * s, y + 2.5 * s, s, s);
-                ctx.fillRect(x + 7 * s, y + 2.5 * s, s, s);
-                // Glasses frames
+                ctx.fillRect(x + 3.5 * s, y + 3 * s, s, s);
+                // Glasses (profile)
                 ctx.fillStyle = "#666";
-                ctx.fillRect(x + 3.5 * s, y + 2 * s, 2 * s, 2 * s);
-                ctx.fillRect(x + 6.5 * s, y + 2 * s, 2 * s, 2 * s);
-                ctx.fillRect(x + 5.5 * s, y + 2.5 * s, 1 * s, 0.5 * s);
-                // Glasses lenses
+                ctx.fillRect(x + 3 * s, y + 2.5 * s, 2 * s, 2 * s);
+                // Glasses lens
                 ctx.fillStyle = "rgba(100, 180, 255, 0.3)";
-                ctx.fillRect(x + 3.8 * s, y + 2.2 * s, 1.5 * s, 1.5 * s);
-                ctx.fillRect(x + 6.8 * s, y + 2.2 * s, 1.5 * s, 1.5 * s);
+                ctx.fillRect(x + 3.2 * s, y + 2.7 * s, 1.5 * s, 1.5 * s);
+                // Nose
+                ctx.fillStyle = "#e8b896";
+                ctx.fillRect(x + 2.5 * s, y + 3.5 * s, s, 0.8 * s);
                 // Mouth
-                ctx.fillStyle = "#333";
-                ctx.fillRect(x + 5 * s, y + 4.5 * s, 2 * s, 0.5 * s);
-                // Body (hoodie)
+                ctx.fillStyle = "#c89070";
+                ctx.fillRect(x + 3.5 * s, y + 5 * s, 1.5 * s, 0.5 * s);
+
+                // Body (hoodie, seated)
                 ctx.fillStyle = "#2d5aa0";
-                ctx.fillRect(x + 2 * s, y + 6 * s, 8 * s, 8 * s);
-                // Hoodie pocket
+                ctx.fillRect(x + 4 * s, y + 6 * s, 6 * s, 8 * s);
+                // Hoodie detail
                 ctx.fillStyle = "#2550880";
-                ctx.fillRect(x + 4 * s, y + 10 * s, 4 * s, 2 * s);
-                // Arms (reaching forward for keyboard)
+                ctx.fillRect(x + 5 * s, y + 9 * s, 4 * s, 2 * s);
+
+                // Left arm (reaching toward keyboard/desk)
                 ctx.fillStyle = "#2d5aa0";
-                ctx.fillRect(x + 0.5 * s, y + 7 * s, 2 * s, 5 * s);
-                ctx.fillRect(x + 9.5 * s, y + 7 * s, 2 * s, 5 * s);
-                // Hands
+                ctx.fillRect(x + 2 * s, y + 7 * s, 3 * s, 2 * s);
+                ctx.fillRect(x + 0.5 * s, y + 8 * s, 2 * s, 2 * s);
+                // Left hand on desk
                 ctx.fillStyle = "#ffccaa";
-                ctx.fillRect(x + 0.5 * s, y + 11.5 * s, 2 * s, 1.5 * s);
-                ctx.fillRect(x + 9.5 * s, y + 11.5 * s, 2 * s, 1.5 * s);
-                // Chair
-                ctx.fillStyle = "#444";
-                ctx.fillRect(x + 1 * s, y + 14 * s, 10 * s, 3 * s);
-                ctx.fillStyle = "#555";
-                ctx.fillRect(x - 0.5 * s, y + 6 * s, 1.5 * s, 11 * s); // chair back left
-                ctx.fillRect(x + 11 * s, y + 6 * s, 1.5 * s, 11 * s); // chair back right
-                // Chair legs
-                ctx.fillStyle = "#333";
-                ctx.fillRect(x + 3 * s, y + 17 * s, 2 * s, 3 * s);
-                ctx.fillRect(x + 7 * s, y + 17 * s, 2 * s, 3 * s);
+                ctx.fillRect(x - 0.5 * s, y + 8.5 * s, 1.5 * s, 1.5 * s);
+
+                // Right arm (on desk too)
+                ctx.fillStyle = "#2d5aa0";
+                ctx.fillRect(x + 9 * s, y + 7 * s, 2 * s, 3 * s);
+                // Right hand
+                ctx.fillStyle = "#ffccaa";
+                ctx.fillRect(x + 9 * s, y + 9.5 * s, 2 * s, 1 * s);
+
+                // Legs (seated, bent)
+                ctx.fillStyle = "#445";
+                ctx.fillRect(x + 4 * s, y + 14 * s, 3 * s, 3 * s);
+                ctx.fillRect(x + 7 * s, y + 14 * s, 3 * s, 3 * s);
+                // Lower legs
+                ctx.fillRect(x + 3 * s, y + 17 * s, 2.5 * s, 2 * s);
+                ctx.fillRect(x + 8 * s, y + 17 * s, 2.5 * s, 2 * s);
+                // Shoes
+                ctx.fillStyle = "#222";
+                ctx.fillRect(x + 2 * s, y + 19 * s, 3 * s, 1.5 * s);
+                ctx.fillRect(x + 7.5 * s, y + 19 * s, 3 * s, 1.5 * s);
             }
 
             function drawFloor() {
@@ -592,6 +623,163 @@
                 ctx.stroke();
                 ctx.lineWidth = 1;
             }
+
+            // ============================================================
+            // PIXEL ART PROBLEM ICONS
+            // ============================================================
+
+            // Bug (beetle) — top-down view
+            function drawBugIcon(cx, cy, size) {
+                const s = size / 20;
+                const x = cx - 10 * s;
+                const y = cy - 10 * s;
+                // Body (oval)
+                ctx.fillStyle = "#cc2200";
+                ctx.fillRect(x + 6 * s, y + 5 * s, 8 * s, 12 * s);
+                // Head
+                ctx.fillStyle = "#881100";
+                ctx.fillRect(x + 7 * s, y + 2 * s, 6 * s, 4 * s);
+                // Wing split line
+                ctx.fillStyle = "#881100";
+                ctx.fillRect(x + 9.5 * s, y + 5 * s, 1 * s, 12 * s);
+                // Wing spots
+                ctx.fillStyle = "#220000";
+                ctx.fillRect(x + 7 * s, y + 7 * s, 2 * s, 2 * s);
+                ctx.fillRect(x + 11 * s, y + 7 * s, 2 * s, 2 * s);
+                ctx.fillRect(x + 7 * s, y + 12 * s, 2 * s, 2 * s);
+                ctx.fillRect(x + 11 * s, y + 12 * s, 2 * s, 2 * s);
+                // Antennae
+                ctx.fillStyle = "#881100";
+                ctx.fillRect(x + 6 * s, y + 1 * s, 1 * s, 2 * s);
+                ctx.fillRect(x + 13 * s, y + 1 * s, 1 * s, 2 * s);
+                ctx.fillRect(x + 5 * s, y + 0 * s, 1 * s, 1 * s);
+                ctx.fillRect(x + 14 * s, y + 0 * s, 1 * s, 1 * s);
+                // Legs (3 pairs)
+                ctx.fillStyle = "#661100";
+                ctx.fillRect(x + 4 * s, y + 6 * s, 2 * s, 1 * s);
+                ctx.fillRect(x + 14 * s, y + 6 * s, 2 * s, 1 * s);
+                ctx.fillRect(x + 3 * s, y + 10 * s, 3 * s, 1 * s);
+                ctx.fillRect(x + 14 * s, y + 10 * s, 3 * s, 1 * s);
+                ctx.fillRect(x + 4 * s, y + 14 * s, 2 * s, 1 * s);
+                ctx.fillRect(x + 14 * s, y + 14 * s, 2 * s, 1 * s);
+                // Eyes
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(x + 8 * s, y + 3 * s, 1.5 * s, 1.5 * s);
+                ctx.fillRect(x + 11 * s, y + 3 * s, 1.5 * s, 1.5 * s);
+            }
+
+            // HDD disk
+            function drawHDDIcon(cx, cy, size) {
+                const s = size / 20;
+                const x = cx - 12 * s;
+                const y = cy - 8 * s;
+                // HDD case
+                ctx.fillStyle = "#667";
+                ctx.fillRect(x + 2 * s, y + 1 * s, 20 * s, 14 * s);
+                ctx.fillStyle = "#778";
+                ctx.fillRect(x + 3 * s, y + 2 * s, 18 * s, 12 * s);
+                // Label area
+                ctx.fillStyle = "#99a";
+                ctx.fillRect(x + 4 * s, y + 3 * s, 10 * s, 5 * s);
+                // Label text
+                ctx.fillStyle = "#445";
+                ctx.fillRect(x + 5 * s, y + 4 * s, 6 * s, 1 * s);
+                ctx.fillRect(x + 5 * s, y + 6 * s, 4 * s, 1 * s);
+                // Screw holes
+                ctx.fillStyle = "#556";
+                ctx.fillRect(x + 4 * s, y + 10 * s, 2 * s, 2 * s);
+                ctx.fillRect(x + 18 * s, y + 10 * s, 2 * s, 2 * s);
+                ctx.fillRect(x + 18 * s, y + 3 * s, 2 * s, 2 * s);
+                // Connector pins at bottom
+                ctx.fillStyle = "#da3";
+                ctx.fillRect(x + 7 * s, y + 13 * s, 1 * s, 2 * s);
+                ctx.fillRect(x + 9 * s, y + 13 * s, 1 * s, 2 * s);
+                ctx.fillRect(x + 11 * s, y + 13 * s, 1 * s, 2 * s);
+                ctx.fillRect(x + 13 * s, y + 13 * s, 1 * s, 2 * s);
+                // LED indicator
+                ctx.fillStyle = "#e94560";
+                ctx.fillRect(x + 16 * s, y + 5 * s, 2 * s, 2 * s);
+            }
+
+            // Ethernet port
+            function drawEthernetIcon(cx, cy, size) {
+                const s = size / 20;
+                const x = cx - 10 * s;
+                const y = cy - 10 * s;
+                // Cable
+                ctx.fillStyle = "#4da6ff";
+                ctx.fillRect(x + 9 * s, y + 0 * s, 2 * s, 5 * s);
+                // Connector housing
+                ctx.fillStyle = "#ccd";
+                ctx.fillRect(x + 5 * s, y + 4 * s, 10 * s, 10 * s);
+                ctx.fillStyle = "#aab";
+                ctx.fillRect(x + 6 * s, y + 5 * s, 8 * s, 8 * s);
+                // Port opening (dark)
+                ctx.fillStyle = "#223";
+                ctx.fillRect(x + 7 * s, y + 6 * s, 6 * s, 5 * s);
+                // Pin contacts inside port
+                ctx.fillStyle = "#da3";
+                for (let i = 0; i < 4; i++) {
+                    ctx.fillRect(x + 8 * s + i * 1.2 * s, y + 7 * s, 0.8 * s, 3 * s);
+                }
+                // Clip/tab
+                ctx.fillStyle = "#99a";
+                ctx.fillRect(x + 8 * s, y + 11 * s, 4 * s, 2 * s);
+                // Cable strain relief
+                ctx.fillStyle = "#3388cc";
+                ctx.fillRect(x + 8 * s, y + 2 * s, 4 * s, 3 * s);
+                // Link LED
+                ctx.fillStyle = "#53d769";
+                ctx.fillRect(x + 13 * s, y + 12 * s, 1.5 * s, 1.5 * s);
+                // Activity LED
+                ctx.fillStyle = "#f5a623";
+                ctx.fillRect(x + 5.5 * s, y + 12 * s, 1.5 * s, 1.5 * s);
+            }
+
+            // CPU / Microchip
+            function drawCPUIcon(cx, cy, size) {
+                const s = size / 20;
+                const x = cx - 10 * s;
+                const y = cy - 10 * s;
+                // Chip body
+                ctx.fillStyle = "#334";
+                ctx.fillRect(x + 4 * s, y + 4 * s, 12 * s, 12 * s);
+                // Chip die (center)
+                ctx.fillStyle = "#556";
+                ctx.fillRect(x + 6 * s, y + 6 * s, 8 * s, 8 * s);
+                // Die marking
+                ctx.fillStyle = "#778";
+                ctx.fillRect(x + 7 * s, y + 7 * s, 6 * s, 3 * s);
+                ctx.fillRect(x + 7 * s, y + 11 * s, 4 * s, 2 * s);
+                // Pins — top
+                ctx.fillStyle = "#99a";
+                for (let i = 0; i < 4; i++) {
+                    ctx.fillRect(x + 5.5 * s + i * 2.5 * s, y + 1.5 * s, 1.5 * s, 3 * s);
+                }
+                // Pins — bottom
+                for (let i = 0; i < 4; i++) {
+                    ctx.fillRect(x + 5.5 * s + i * 2.5 * s, y + 15.5 * s, 1.5 * s, 3 * s);
+                }
+                // Pins — left
+                for (let i = 0; i < 4; i++) {
+                    ctx.fillRect(x + 1.5 * s, y + 5.5 * s + i * 2.5 * s, 3 * s, 1.5 * s);
+                }
+                // Pins — right
+                for (let i = 0; i < 4; i++) {
+                    ctx.fillRect(x + 15.5 * s, y + 5.5 * s + i * 2.5 * s, 3 * s, 1.5 * s);
+                }
+                // Corner dot
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(x + 5 * s, y + 5 * s, 1 * s, 1 * s);
+            }
+
+            // Map zone to draw function
+            const PROBLEM_DRAW = {
+                left: drawBugIcon,
+                bottom: drawHDDIcon,
+                right: drawEthernetIcon,
+                top: drawCPUIcon,
+            };
 
             // ============================================================
             // PROBLEM RENDERING
@@ -628,15 +816,16 @@
                 ctx.stroke();
                 ctx.lineWidth = 1;
 
-                // Emoji
-                ctx.font = `${Math.floor(size * 1.2)}px serif`;
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(problem.emoji, z.x, z.y + 4);
+                // Draw pixel art icon
+                const drawFn = PROBLEM_DRAW[problem.zone];
+                if (drawFn) {
+                    drawFn(z.x, z.y, size * 1.6);
+                }
 
                 // Label below
                 ctx.fillStyle = problem.color;
                 ctx.font = '8px "Press Start 2P"';
+                ctx.textAlign = "center";
                 ctx.fillText(problem.label, z.x, z.y + size + 20);
 
                 // Reset text alignment
@@ -781,15 +970,18 @@
             function gameLoop() {
                 frameTime = Date.now();
 
-                // Update graph data
+                // Update graph data (every 2nd frame for slower drawing)
                 if (gameState === "playing") {
-                    graphData.shift();
-                    const noise = (Math.random() - 0.5) * 0.2;
-                    const lastVal = graphData[graphData.length - 1];
-                    const spike = problems.length > 0 ? 0.3 : 0;
-                    graphData.push(
-                        Math.max(0, Math.min(1, lastVal + noise + spike * 0.1)),
-                    );
+                    graphFrameCounter++;
+                    if (graphFrameCounter % 2 === 0) {
+                        graphData.shift();
+                        const noise = (Math.random() - 0.5) * 0.2;
+                        const lastVal = graphData[graphData.length - 1];
+                        const spike = problems.length > 0 ? 0.3 : 0;
+                        graphData.push(
+                            Math.max(0, Math.min(1, lastVal + noise + spike * 0.1)),
+                        );
+                    }
                 }
 
                 // Check expired problems
@@ -828,6 +1020,7 @@
                 // Reset graph
                 graphData = [];
                 for (let i = 0; i < 80; i++) graphData.push(0.5);
+                graphFrameCounter = 0;
 
                 updateUI();
                 startScreen.classList.add("hidden");
