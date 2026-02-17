@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>Бэкенд-инженер</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                background: #1a1a2e;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                min-height: 100dvh;
+                font-family: "Press Start 2P", monospace;
+                image-rendering: pixelated;
+                overflow: hidden;
+                touch-action: manipulation;
+            }
+
+            #game-wrapper {
+                position: relative;
+                width: 960px;
+                height: 640px;
+                background: #0f3460;
+                border: 4px solid #e94560;
+                border-radius: 4px;
+                overflow: hidden;
+                box-shadow: 0 0 40px rgba(233, 69, 96, 0.3);
+                transform-origin: center center;
+            }
+
+            /* === TOP BAR === */
+            #top-bar {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 52px;
+                background: #16213e;
+                border-bottom: 3px solid #e94560;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10;
+            }
+
+            #menu-btn {
+                position: absolute;
+                left: 12px;
+                color: #f5a623;
+                font-family: "Press Start 2P", monospace;
+                font-size: 10px;
+                background: none;
+                border: 2px solid #f5a623;
+                border-radius: 3px;
+                padding: 6px 10px;
+                cursor: pointer;
+                transition: transform 0.1s;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+            }
+
+            #menu-btn:hover {
+                transform: scale(1.05);
+            }
+
+            #menu-btn:active {
+                transform: scale(0.95);
+            }
+
+            #score-display {
+                color: #53d769;
+                font-size: 14px;
+                text-shadow: 0 0 8px rgba(83, 215, 105, 0.5);
+            }
+
+            #lives-display {
+                position: absolute;
+                right: 16px;
+                color: #e94560;
+                font-size: 16px;
+            }
+
+            /* === MAIN CANVAS === */
+            #game-canvas {
+                position: absolute;
+                top: 52px;
+                left: 0;
+                width: 960px;
+                height: 588px;
+                cursor: pointer;
+            }
+
+            /* === OVERLAYS === */
+            .overlay {
+                position: absolute;
+                inset: 0;
+                background: rgba(10, 10, 35, 0.92);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 100;
+                gap: 24px;
+            }
+
+            .overlay.hidden {
+                display: none;
+            }
+
+            .overlay h1 {
+                color: #e94560;
+                font-size: 28px;
+                text-align: center;
+                text-shadow: 0 0 16px rgba(233, 69, 96, 0.5);
+                line-height: 1.6;
+            }
+
+            .overlay h2 {
+                color: #53d769;
+                font-size: 18px;
+                text-shadow: 0 0 12px rgba(83, 215, 105, 0.4);
+            }
+
+            .overlay p {
+                color: #ccc;
+                font-size: 10px;
+                text-align: center;
+                line-height: 2;
+                max-width: 700px;
+            }
+
+            .overlay button {
+                padding: 16px 40px;
+                background: #e94560;
+                border: 3px solid #c13050;
+                border-radius: 4px;
+                color: #fff;
+                font-family: "Press Start 2P", monospace;
+                font-size: 14px;
+                cursor: pointer;
+                transition: transform 0.1s;
+                margin-top: 12px;
+            }
+
+            .overlay button:hover {
+                transform: scale(1.05);
+            }
+            .overlay button:active {
+                transform: scale(0.95);
+            }
+
+            #lose-score {
+                color: #f5a623;
+                font-size: 22px;
+            }
+
+            /* Landscape hint for portrait phones */
+            #rotate-hint {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: #1a1a2e;
+                z-index: 9999;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 20px;
+                color: #f5a623;
+                font-family: "Press Start 2P", monospace;
+                font-size: 12px;
+                text-align: center;
+                line-height: 2;
+            }
+
+            #rotate-hint .phone-icon {
+                font-size: 64px;
+                animation: rotate-phone 2s ease-in-out infinite;
+            }
+
+            @keyframes rotate-phone {
+                0%, 100% { transform: rotate(0deg); }
+                50% { transform: rotate(90deg); }
+            }
+
+            @media (max-width: 640px) and (orientation: portrait) {
+                #rotate-hint { display: flex; }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="rotate-hint">
+            <div class="phone-icon">📱</div>
+            <div>Переверни<br>телефон</div>
+        </div>
+
+        <div id="game-wrapper">
+            <!-- Top bar -->
+            <div id="top-bar">
+                <a id="menu-btn" href="index.html">← МЕНЮ</a>
+                <div id="score-display">Очки: 0</div>
+                <div id="lives-display">❤❤❤</div>
+            </div>
+
+            <!-- Game canvas -->
+            <canvas id="game-canvas" width="960" height="588"></canvas>
+
+            <!-- Start overlay -->
+            <div class="overlay" id="start-screen">
+                <h1>БЭКЕНД<br />ИНЖЕНЕР</h1>
+                <p>
+                    Ты — инженер в дата-центре!<br />
+                    Проблемы появляются на серверах.<br />
+                    Кликай по ним, чтобы починить!
+                </p>
+                <button id="start-btn">НАЧАТЬ РАБОТУ</button>
+            </div>
+
+            <!-- Lose overlay -->
+            <div class="overlay hidden" id="lose-screen">
+                <h1>СЕРВИС<br />ЛЁГ!</h1>
+                <h2>Слишком много проблем...</h2>
+                <div id="lose-score"></div>
+                <button id="restart-btn">ПЕРЕЗАПУСТИТЬ</button>
+            </div>
+        </div>
+
+        <script>
+            // ============================================================
+            // GAME CONFIG
+            // ============================================================
+            const PROBLEM_TYPES = [
+                { zone: "top",    emoji: "🔥", label: "CPU",   color: "#ff6b35" },
+                { zone: "left",   emoji: "🐛", label: "БАГ",   color: "#e94560" },
+                { zone: "right",  emoji: "🔌", label: "СЕТЬ",  color: "#4da6ff" },
+                { zone: "bottom", emoji: "💾", label: "ДИСК",  color: "#a855f7" },
+            ];
+
+            // Zone positions (center x,y for each zone)
+            const ZONES = {
+                top:    { x: 480, y: 60  },
+                left:   { x: 100, y: 280 },
+                right:  { x: 860, y: 280 },
+                bottom: { x: 480, y: 500 },
+            };
+
+            const PROBLEM_RADIUS = 40;
+            const PROBLEM_LIFETIME = 3500; // ms before problem expires
+            const SPAWN_INTERVAL = 2800;   // ms between spawns
+            const MAX_LIVES = 3;
+
+            // ============================================================
+            // AUDIO
+            // ============================================================
+            let audioCtx = null;
+
+            function initAudio() {
+                if (!audioCtx)
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            function playBeep(freq, duration, type = "square") {
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.value = 0.15;
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            }
+
+            function playAlarm() {
+                playBeep(880, 0.08, "sawtooth");
+                setTimeout(() => playBeep(660, 0.08, "sawtooth"), 80);
+            }
+
+            function playFix() {
+                playBeep(523, 0.08);
+                setTimeout(() => playBeep(784, 0.15), 80);
+            }
+
+            function playLoseLife() {
+                playBeep(200, 0.2, "sawtooth");
+                setTimeout(() => playBeep(150, 0.3, "sawtooth"), 200);
+            }
+
+            function playGameOver() {
+                playBeep(300, 0.15, "sawtooth");
+                setTimeout(() => playBeep(200, 0.2, "sawtooth"), 150);
+                setTimeout(() => playBeep(120, 0.4, "sawtooth"), 350);
+            }
+
+            // ============================================================
+            // GAME STATE
+            // ============================================================
+            let score = 0;
+            let lives = MAX_LIVES;
+            let gameState = "start"; // start | playing | gameover
+            let problems = [];       // active problems on screen
+            let fixEffects = [];     // visual fix effects
+            let loseEffects = [];    // visual lose-life effects
+            let spawnTimer = null;
+            let frameTime = 0;
+            let serverLedPhase = 0;  // for blinking server LEDs
+
+            // Monitoring graph data
+            let graphData = [];
+            for (let i = 0; i < 80; i++) graphData.push(0.5);
+
+            // DOM
+            const canvas = document.getElementById("game-canvas");
+            const ctx = canvas.getContext("2d");
+            const scoreDisplay = document.getElementById("score-display");
+            const livesDisplay = document.getElementById("lives-display");
+            const startScreen = document.getElementById("start-screen");
+            const loseScreen = document.getElementById("lose-screen");
+            const loseScore = document.getElementById("lose-score");
+            const startBtn = document.getElementById("start-btn");
+            const restartBtn = document.getElementById("restart-btn");
+
+            // ============================================================
+            // PIXEL ART DRAWING
+            // ============================================================
+
+            function drawPixelRect(x, y, w, h, color) {
+                ctx.fillStyle = color;
+                ctx.fillRect(x, y, w, h);
+            }
+
+            function drawServerRack(x, y, side) {
+                // Main rack body
+                drawPixelRect(x, y, 80, 300, "#2a2a3e");
+                drawPixelRect(x + 2, y + 2, 76, 296, "#1e1e30");
+
+                // Server units (5 units per rack)
+                for (let i = 0; i < 5; i++) {
+                    const uy = y + 10 + i * 56;
+                    // Unit body
+                    drawPixelRect(x + 6, uy, 68, 48, "#333350");
+                    drawPixelRect(x + 8, uy + 2, 64, 44, "#2a2a44");
+
+                    // Ventilation grilles
+                    for (let g = 0; g < 4; g++) {
+                        drawPixelRect(x + 12 + g * 14, uy + 8, 10, 2, "#444460");
+                        drawPixelRect(x + 12 + g * 14, uy + 14, 10, 2, "#444460");
+                        drawPixelRect(x + 12 + g * 14, uy + 20, 10, 2, "#444460");
+                    }
+
+                    // LED indicators (blinking)
+                    const ledPhase = (serverLedPhase + i * 17 + (side === "right" ? 37 : 0)) % 60;
+                    const led1 = ledPhase < 40 ? "#53d769" : "#2a5a30";
+                    const led2 = (ledPhase + 20) % 60 < 45 ? "#53d769" : "#2a5a30";
+                    const led3 = (ledPhase + 10) % 60 < 30 ? "#f5a623" : "#5a4a20";
+
+                    drawPixelRect(x + 60, uy + 30, 4, 4, led1);
+                    drawPixelRect(x + 60, uy + 38, 4, 4, led2);
+                    drawPixelRect(x + 66, uy + 30, 4, 4, led3);
+                }
+
+                // Rack rails
+                drawPixelRect(x, y, 4, 300, "#555570");
+                drawPixelRect(x + 76, y, 4, 300, "#555570");
+            }
+
+            function drawDesk(x, y) {
+                // Desk top
+                drawPixelRect(x, y, 240, 12, "#8B5E3C");
+                drawPixelRect(x + 2, y + 2, 236, 8, "#A0522D");
+                // Desk legs
+                drawPixelRect(x + 10, y + 12, 12, 80, "#6B3E2A");
+                drawPixelRect(x + 218, y + 12, 12, 80, "#6B3E2A");
+                // Desk front panel
+                drawPixelRect(x + 10, y + 12, 220, 6, "#7B4E3A");
+            }
+
+            function drawMonitor(x, y) {
+                // Monitor frame
+                drawPixelRect(x, y, 140, 100, "#333");
+                drawPixelRect(x + 4, y + 4, 132, 80, "#0a0a23");
+                // Stand
+                drawPixelRect(x + 55, y + 100, 30, 12, "#444");
+                drawPixelRect(x + 40, y + 110, 60, 6, "#555");
+
+                // "Code" on screen
+                const codeLines = [
+                    { w: 40, c: "#a855f7" },
+                    { w: 60, c: "#53d769" },
+                    { w: 35, c: "#4da6ff" },
+                    { w: 55, c: "#f5a623" },
+                    { w: 45, c: "#53d769" },
+                    { w: 30, c: "#e94560" },
+                ];
+                codeLines.forEach((line, i) => {
+                    drawPixelRect(x + 10, y + 10 + i * 12, line.w, 6, line.c);
+                });
+
+                // Screen glow
+                ctx.fillStyle = "rgba(83, 215, 105, 0.05)";
+                ctx.fillRect(x + 4, y + 4, 132, 80);
+            }
+
+            function drawMonitoringScreen(x, y) {
+                // Small monitoring monitor
+                drawPixelRect(x, y, 100, 70, "#333");
+                drawPixelRect(x + 3, y + 3, 94, 54, "#0a0a1a");
+                // Stand
+                drawPixelRect(x + 38, y + 70, 24, 8, "#444");
+                drawPixelRect(x + 30, y + 76, 40, 4, "#555");
+
+                // "MONITORING" label
+                ctx.fillStyle = "#53d769";
+                ctx.font = '5px "Press Start 2P"';
+                ctx.fillText("MON", x + 8, y + 14);
+
+                // Graph line
+                ctx.beginPath();
+                ctx.strokeStyle = "#53d769";
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 80; i++) {
+                    const gx = x + 7 + i;
+                    const gy = y + 24 + graphData[i] * 26;
+                    if (i === 0) ctx.moveTo(gx, gy);
+                    else ctx.lineTo(gx, gy);
+                }
+                ctx.stroke();
+                ctx.lineWidth = 1;
+
+                // Screen glow
+                ctx.fillStyle = "rgba(83, 215, 105, 0.04)";
+                ctx.fillRect(x + 3, y + 3, 94, 54);
+            }
+
+            function drawEngineer(x, y) {
+                const s = 3.5;
+                // Head
+                ctx.fillStyle = "#ffccaa";
+                ctx.fillRect(x + 3 * s, y, 6 * s, 6 * s);
+                // Hair
+                ctx.fillStyle = "#4a3020";
+                ctx.fillRect(x + 3 * s, y, 6 * s, 2 * s);
+                // Eyes
+                ctx.fillStyle = "#333";
+                ctx.fillRect(x + 4 * s, y + 2.5 * s, s, s);
+                ctx.fillRect(x + 7 * s, y + 2.5 * s, s, s);
+                // Glasses frames
+                ctx.fillStyle = "#666";
+                ctx.fillRect(x + 3.5 * s, y + 2 * s, 2 * s, 2 * s);
+                ctx.fillRect(x + 6.5 * s, y + 2 * s, 2 * s, 2 * s);
+                ctx.fillRect(x + 5.5 * s, y + 2.5 * s, 1 * s, 0.5 * s);
+                // Glasses lenses
+                ctx.fillStyle = "rgba(100, 180, 255, 0.3)";
+                ctx.fillRect(x + 3.8 * s, y + 2.2 * s, 1.5 * s, 1.5 * s);
+                ctx.fillRect(x + 6.8 * s, y + 2.2 * s, 1.5 * s, 1.5 * s);
+                // Mouth
+                ctx.fillStyle = "#333";
+                ctx.fillRect(x + 5 * s, y + 4.5 * s, 2 * s, 0.5 * s);
+                // Body (hoodie)
+                ctx.fillStyle = "#2d5aa0";
+                ctx.fillRect(x + 2 * s, y + 6 * s, 8 * s, 8 * s);
+                // Hoodie pocket
+                ctx.fillStyle = "#2550880";
+                ctx.fillRect(x + 4 * s, y + 10 * s, 4 * s, 2 * s);
+                // Arms (reaching forward for keyboard)
+                ctx.fillStyle = "#2d5aa0";
+                ctx.fillRect(x + 0.5 * s, y + 7 * s, 2 * s, 5 * s);
+                ctx.fillRect(x + 9.5 * s, y + 7 * s, 2 * s, 5 * s);
+                // Hands
+                ctx.fillStyle = "#ffccaa";
+                ctx.fillRect(x + 0.5 * s, y + 11.5 * s, 2 * s, 1.5 * s);
+                ctx.fillRect(x + 9.5 * s, y + 11.5 * s, 2 * s, 1.5 * s);
+                // Chair
+                ctx.fillStyle = "#444";
+                ctx.fillRect(x + 1 * s, y + 14 * s, 10 * s, 3 * s);
+                ctx.fillStyle = "#555";
+                ctx.fillRect(x - 0.5 * s, y + 6 * s, 1.5 * s, 11 * s); // chair back left
+                ctx.fillRect(x + 11 * s, y + 6 * s, 1.5 * s, 11 * s);  // chair back right
+                // Chair legs
+                ctx.fillStyle = "#333";
+                ctx.fillRect(x + 3 * s, y + 17 * s, 2 * s, 3 * s);
+                ctx.fillRect(x + 7 * s, y + 17 * s, 2 * s, 3 * s);
+            }
+
+            function drawFloor() {
+                // Dark tech floor with grid
+                for (let row = 0; row < 12; row++) {
+                    for (let col = 0; col < 24; col++) {
+                        ctx.fillStyle = (row + col) % 2 === 0 ? "#141428" : "#121224";
+                        ctx.fillRect(col * 40, 440 + row * 14, 40, 14);
+                    }
+                }
+            }
+
+            function drawCables() {
+                // Floor cables
+                ctx.strokeStyle = "#2a5a30";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(180, 460);
+                ctx.quadraticCurveTo(300, 480, 400, 460);
+                ctx.stroke();
+
+                ctx.strokeStyle = "#4a2a2a";
+                ctx.beginPath();
+                ctx.moveTo(560, 460);
+                ctx.quadraticCurveTo(680, 475, 780, 455);
+                ctx.stroke();
+                ctx.lineWidth = 1;
+            }
+
+            // ============================================================
+            // PROBLEM RENDERING
+            // ============================================================
+            function drawProblem(problem) {
+                const z = ZONES[problem.zone];
+                const elapsed = Date.now() - problem.spawnTime;
+                const remaining = PROBLEM_LIFETIME - elapsed;
+                const progress = Math.max(0, remaining / PROBLEM_LIFETIME);
+
+                // Pulsing scale
+                const pulse = 1 + 0.15 * Math.sin(elapsed * 0.008);
+                const size = PROBLEM_RADIUS * pulse;
+
+                // Warning circle background (fading from green to red)
+                const r = Math.floor(255 * (1 - progress));
+                const g = Math.floor(200 * progress);
+                ctx.beginPath();
+                ctx.arc(z.x, z.y, size + 8, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${r}, ${g}, 50, 0.3)`;
+                ctx.fill();
+
+                // Timer ring
+                ctx.beginPath();
+                ctx.arc(z.x, z.y, size + 4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
+                ctx.strokeStyle = `rgb(${r}, ${g}, 50)`;
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                ctx.lineWidth = 1;
+
+                // Emoji
+                ctx.font = `${Math.floor(size * 1.2)}px serif`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(problem.emoji, z.x, z.y + 4);
+
+                // Label below
+                ctx.fillStyle = problem.color;
+                ctx.font = '8px "Press Start 2P"';
+                ctx.fillText(problem.label, z.x, z.y + size + 20);
+
+                // Reset text alignment
+                ctx.textAlign = "start";
+                ctx.textBaseline = "alphabetic";
+            }
+
+            function drawFixEffect(effect) {
+                const elapsed = Date.now() - effect.time;
+                const progress = elapsed / 400;
+                if (progress >= 1) return false;
+
+                const alpha = 1 - progress;
+                const radius = 20 + progress * 60;
+
+                // Green flash ring
+                ctx.beginPath();
+                ctx.arc(effect.x, effect.y, radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(83, 215, 105, ${alpha})`;
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                ctx.lineWidth = 1;
+
+                // Sparkle particles
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2 + progress * 2;
+                    const dist = 10 + progress * 50;
+                    const px = effect.x + Math.cos(angle) * dist;
+                    const py = effect.y + Math.sin(angle) * dist;
+                    const sz = (1 - progress) * 6;
+                    ctx.fillStyle = `rgba(83, 215, 105, ${alpha})`;
+                    ctx.fillRect(px - sz / 2, py - sz / 2, sz, sz);
+                }
+
+                // Checkmark
+                if (progress < 0.6) {
+                    ctx.fillStyle = `rgba(83, 215, 105, ${alpha})`;
+                    ctx.font = `${32 + progress * 20}px serif`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("✅", effect.x, effect.y);
+                    ctx.textAlign = "start";
+                    ctx.textBaseline = "alphabetic";
+                }
+
+                return true;
+            }
+
+            function drawLoseEffect(effect) {
+                const elapsed = Date.now() - effect.time;
+                const progress = elapsed / 600;
+                if (progress >= 1) return false;
+
+                const alpha = 1 - progress;
+
+                // Red flash
+                ctx.beginPath();
+                ctx.arc(effect.x, effect.y, 30 + progress * 40, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(233, 69, 96, ${alpha * 0.3})`;
+                ctx.fill();
+
+                // X mark
+                if (progress < 0.7) {
+                    ctx.fillStyle = `rgba(233, 69, 96, ${alpha})`;
+                    ctx.font = `${36 + progress * 16}px serif`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("💥", effect.x, effect.y);
+                    ctx.textAlign = "start";
+                    ctx.textBaseline = "alphabetic";
+                }
+
+                return true;
+            }
+
+            // ============================================================
+            // SCENE RENDERING
+            // ============================================================
+            function drawScene() {
+                // Background — dark data center
+                ctx.fillStyle = "#0a0a20";
+                ctx.fillRect(0, 0, 960, 588);
+
+                // Ceiling
+                ctx.fillStyle = "#0d0d1a";
+                ctx.fillRect(0, 0, 960, 30);
+                // Ceiling lights
+                for (let i = 0; i < 5; i++) {
+                    ctx.fillStyle = "rgba(200, 200, 220, 0.15)";
+                    ctx.fillRect(80 + i * 200, 0, 60, 30);
+                    ctx.fillStyle = "rgba(200, 200, 220, 0.05)";
+                    ctx.fillRect(60 + i * 200, 30, 100, 100);
+                }
+
+                drawFloor();
+                drawCables();
+
+                // Server racks
+                drawServerRack(30, 100, "left");
+                drawServerRack(130, 120, "left");
+                drawServerRack(750, 100, "right");
+                drawServerRack(850, 120, "right");
+
+                // Desk
+                drawDesk(360, 340);
+
+                // Main monitor
+                drawMonitor(400, 220);
+
+                // Monitoring screen
+                drawMonitoringScreen(500, 240);
+
+                // Engineer
+                drawEngineer(440, 260);
+
+                // Zone hints (subtle)
+                if (gameState === "playing" && problems.length === 0) {
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+                    ctx.font = '8px "Press Start 2P"';
+                    ctx.textAlign = "center";
+                    ctx.fillText("ожидание...", 480, 300);
+                    ctx.textAlign = "start";
+                }
+
+                // Draw problems
+                problems.forEach(p => drawProblem(p));
+
+                // Draw fix effects
+                fixEffects = fixEffects.filter(e => drawFixEffect(e));
+
+                // Draw lose effects
+                loseEffects = loseEffects.filter(e => drawLoseEffect(e));
+
+                serverLedPhase = (serverLedPhase + 1) % 60;
+            }
+
+            // ============================================================
+            // ANIMATION LOOP
+            // ============================================================
+            let animFrameId = null;
+
+            function gameLoop() {
+                frameTime = Date.now();
+
+                // Update graph data
+                if (gameState === "playing") {
+                    graphData.shift();
+                    const noise = (Math.random() - 0.5) * 0.2;
+                    const lastVal = graphData[graphData.length - 1];
+                    const spike = problems.length > 0 ? 0.3 : 0;
+                    graphData.push(Math.max(0, Math.min(1, lastVal + noise + spike * 0.1)));
+                }
+
+                // Check expired problems
+                if (gameState === "playing") {
+                    for (let i = problems.length - 1; i >= 0; i--) {
+                        const elapsed = Date.now() - problems[i].spawnTime;
+                        if (elapsed >= PROBLEM_LIFETIME) {
+                            const z = ZONES[problems[i].zone];
+                            loseEffects.push({ x: z.x, y: z.y, time: Date.now() });
+                            problems.splice(i, 1);
+                            loseLife();
+                        }
+                    }
+                }
+
+                drawScene();
+                animFrameId = requestAnimationFrame(gameLoop);
+            }
+
+            // ============================================================
+            // GAME LOGIC
+            // ============================================================
+            function startGame() {
+                initAudio();
+                score = 0;
+                lives = MAX_LIVES;
+                problems = [];
+                fixEffects = [];
+                loseEffects = [];
+                gameState = "playing";
+
+                // Reset graph
+                graphData = [];
+                for (let i = 0; i < 80; i++) graphData.push(0.5);
+
+                updateUI();
+                startScreen.classList.add("hidden");
+                loseScreen.classList.add("hidden");
+
+                if (!animFrameId) gameLoop();
+                startSpawning();
+            }
+
+            function updateUI() {
+                scoreDisplay.textContent = "Очки: " + score;
+                let hearts = "";
+                for (let i = 0; i < MAX_LIVES; i++) {
+                    hearts += i < lives ? "❤" : "🖤";
+                }
+                livesDisplay.textContent = hearts;
+            }
+
+            function loseLife() {
+                lives--;
+                playLoseLife();
+                updateUI();
+
+                if (lives <= 0) {
+                    gameOver();
+                }
+            }
+
+            function gameOver() {
+                gameState = "gameover";
+                stopSpawning();
+                problems = [];
+                playGameOver();
+
+                setTimeout(() => {
+                    loseScore.textContent = "Починок: " + score;
+                    loseScreen.classList.remove("hidden");
+                }, 600);
+            }
+
+            function spawnProblem() {
+                if (gameState !== "playing") return;
+
+                // Pick a random zone that doesn't already have an active problem
+                const occupiedZones = problems.map(p => p.zone);
+                const freeZones = ["top", "left", "right", "bottom"].filter(
+                    z => !occupiedZones.includes(z)
+                );
+
+                if (freeZones.length === 0) return;
+
+                const zone = freeZones[Math.floor(Math.random() * freeZones.length)];
+                const type = PROBLEM_TYPES.find(t => t.zone === zone);
+
+                problems.push({
+                    zone: type.zone,
+                    emoji: type.emoji,
+                    label: type.label,
+                    color: type.color,
+                    spawnTime: Date.now(),
+                });
+
+                playAlarm();
+            }
+
+            function startSpawning() {
+                stopSpawning();
+                // First problem after a short delay
+                setTimeout(() => {
+                    spawnProblem();
+                    spawnTimer = setInterval(spawnProblem, SPAWN_INTERVAL);
+                }, 1000);
+            }
+
+            function stopSpawning() {
+                if (spawnTimer) {
+                    clearInterval(spawnTimer);
+                    spawnTimer = null;
+                }
+            }
+
+            function tryFixZone(zone) {
+                if (gameState !== "playing") return;
+
+                const idx = problems.findIndex(p => p.zone === zone);
+                if (idx === -1) return;
+
+                const z = ZONES[zone];
+                fixEffects.push({ x: z.x, y: z.y, time: Date.now() });
+                problems.splice(idx, 1);
+                score++;
+                playFix();
+                updateUI();
+            }
+
+            function getZoneFromClick(canvasX, canvasY) {
+                // Check which zone was clicked
+                for (const [zone, pos] of Object.entries(ZONES)) {
+                    const dx = canvasX - pos.x;
+                    const dy = canvasY - pos.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < PROBLEM_RADIUS + 30) {
+                        return zone;
+                    }
+                }
+                return null;
+            }
+
+            // ============================================================
+            // EVENT LISTENERS
+            // ============================================================
+            startBtn.addEventListener("click", startGame);
+            restartBtn.addEventListener("click", startGame);
+
+            // Canvas click/tap
+            canvas.addEventListener("click", (e) => {
+                if (gameState !== "playing") return;
+
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = 960 / rect.width;
+                const scaleY = 588 / rect.height;
+                const cx = (e.clientX - rect.left) * scaleX;
+                const cy = (e.clientY - rect.top) * scaleY;
+
+                const zone = getZoneFromClick(cx, cy);
+                if (zone) {
+                    tryFixZone(zone);
+                }
+            });
+
+            // Keyboard support
+            document.addEventListener("keydown", (e) => {
+                if (gameState !== "playing") return;
+
+                const keyMap = {
+                    "1": "top",    "w": "top",    "W": "top",    "ArrowUp": "top",
+                    "2": "left",   "a": "left",   "A": "left",   "ArrowLeft": "left",
+                    "3": "right",  "d": "right",  "D": "right",  "ArrowRight": "right",
+                    "4": "bottom", "s": "bottom",  "S": "bottom", "ArrowDown": "bottom",
+                };
+
+                const zone = keyMap[e.key];
+                if (zone) {
+                    e.preventDefault();
+                    tryFixZone(zone);
+                }
+            });
+
+            // ============================================================
+            // RESPONSIVE SCALING
+            // ============================================================
+            const gameWrapper = document.getElementById('game-wrapper');
+
+            function resizeGame() {
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const gameW = 960;
+                const gameH = 640;
+                const scaleX = vw / gameW;
+                const scaleY = vh / gameH;
+                const scale = Math.min(scaleX, scaleY);
+                gameWrapper.style.transform = 'scale(' + scale + ')';
+                gameWrapper.style.transformOrigin = 'top left';
+                gameWrapper.style.position = 'absolute';
+                gameWrapper.style.left = Math.max(0, (vw - gameW * scale) / 2) + 'px';
+                gameWrapper.style.top = Math.max(0, (vh - gameH * scale) / 2) + 'px';
+            }
+
+            window.addEventListener('resize', resizeGame);
+            window.addEventListener('orientationchange', () => setTimeout(resizeGame, 100));
+            resizeGame();
+
+            // Start with initial render
+            drawScene();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <title>Король POSAPI</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                background: #1a1a2e;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                min-height: 100dvh;
+                font-family: "Press Start 2P", monospace;
+                image-rendering: pixelated;
+                overflow: hidden;
+                touch-action: manipulation;
+            }
+
+            #game-wrapper {
+                position: relative;
+                width: 960px;
+                height: 640px;
+                background: #0f3460;
+                border: 4px solid #e94560;
+                border-radius: 4px;
+                overflow: hidden;
+                box-shadow: 0 0 40px rgba(233, 69, 96, 0.3);
+                transform-origin: center center;
+            }
+
+            /* === TOP BAR === */
+            #top-bar {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 52px;
+                background: #16213e;
+                border-bottom: 3px solid #e94560;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10;
+            }
+
+            #menu-btn {
+                position: absolute;
+                left: 12px;
+                color: #f5a623;
+                font-family: "Press Start 2P", monospace;
+                font-size: 10px;
+                background: none;
+                border: 2px solid #f5a623;
+                border-radius: 3px;
+                padding: 6px 10px;
+                cursor: pointer;
+                transition: transform 0.1s;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+            }
+
+            #menu-btn:hover {
+                transform: scale(1.05);
+            }
+
+            #menu-btn:active {
+                transform: scale(0.95);
+            }
+
+            #score-display {
+                color: #53d769;
+                font-size: 14px;
+                text-shadow: 0 0 8px rgba(83, 215, 105, 0.5);
+            }
+
+            #customer-counter {
+                position: absolute;
+                right: 16px;
+                color: #f5a623;
+                font-size: 10px;
+            }
+
+            /* === MAIN CANVAS === */
+            #game-canvas {
+                position: absolute;
+                top: 52px;
+                left: 0;
+                width: 960px;
+                height: 588px;
+            }
+
+            /* === TERMINAL PANEL === */
+            #terminal-panel {
+                position: absolute;
+                top: 60px;
+                right: 8px;
+                width: 210px;
+                background: #1a1a3a;
+                border: 3px solid #53d769;
+                border-radius: 6px;
+                z-index: 15;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 10px 8px;
+                gap: 8px;
+                box-shadow: 0 0 20px rgba(83, 215, 105, 0.15);
+            }
+
+            #terminal-title {
+                color: #53d769;
+                font-size: 8px;
+                letter-spacing: 1px;
+                opacity: 0.7;
+            }
+
+            #terminal-display {
+                width: 100%;
+                height: 52px;
+                background: #0a0a23;
+                border: 2px solid #53d769;
+                border-radius: 3px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #53d769;
+                font-family: "Press Start 2P", monospace;
+                font-size: 22px;
+                text-shadow: 0 0 8px rgba(83, 215, 105, 0.5);
+                overflow: hidden;
+            }
+
+            #terminal-display.processing {
+                font-size: 11px;
+                animation: pulse-glow 0.7s ease-in-out infinite;
+            }
+
+            @keyframes pulse-glow {
+                0%, 100% { box-shadow: 0 0 6px rgba(83, 215, 105, 0.3); }
+                50% { box-shadow: 0 0 18px rgba(83, 215, 105, 0.8); }
+            }
+
+            #terminal-display.error {
+                border-color: #e94560;
+                color: #e94560;
+                text-shadow: 0 0 8px rgba(233, 69, 96, 0.5);
+                animation: shake 0.4s ease;
+            }
+
+            #terminal-display.success {
+                border-color: #53d769;
+                box-shadow: 0 0 20px rgba(83, 215, 105, 0.6);
+            }
+
+            #numpad {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
+                width: 100%;
+            }
+
+            .num-btn {
+                height: 52px;
+                background: #2a2a4a;
+                border: 2px solid #444;
+                border-radius: 4px;
+                color: #ddd;
+                font-family: "Press Start 2P", monospace;
+                font-size: 16px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                user-select: none;
+                -webkit-user-select: none;
+                transition: transform 0.08s, background 0.08s;
+            }
+
+            .num-btn:active {
+                transform: scale(0.92);
+                background: #3a3a5a;
+            }
+
+            .num-btn.btn-clear {
+                background: #4a2020;
+                border-color: #e94560;
+                color: #e94560;
+                font-size: 14px;
+            }
+
+            .num-btn.btn-clear:active {
+                background: #6a3030;
+            }
+
+            .num-btn.btn-pay {
+                background: #1a4a2a;
+                border-color: #53d769;
+                color: #53d769;
+                font-size: 18px;
+            }
+
+            .num-btn.btn-pay:active {
+                background: #2a6a3a;
+            }
+
+            #message {
+                position: absolute;
+                top: 56px;
+                left: 0;
+                right: 220px;
+                text-align: center;
+                color: #f5a623;
+                font-size: 11px;
+                z-index: 20;
+                pointer-events: none;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+                padding: 4px;
+            }
+
+            /* === OVERLAYS === */
+            .overlay {
+                position: absolute;
+                inset: 0;
+                background: rgba(10, 10, 35, 0.92);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                z-index: 100;
+                gap: 24px;
+            }
+
+            .overlay.hidden {
+                display: none;
+            }
+
+            .overlay h1 {
+                color: #e94560;
+                font-size: 28px;
+                text-align: center;
+                text-shadow: 0 0 16px rgba(233, 69, 96, 0.5);
+                line-height: 1.6;
+            }
+
+            .overlay h2 {
+                color: #53d769;
+                font-size: 18px;
+                text-shadow: 0 0 12px rgba(83, 215, 105, 0.4);
+            }
+
+            .overlay p {
+                color: #ccc;
+                font-size: 10px;
+                text-align: center;
+                line-height: 2;
+                max-width: 700px;
+            }
+
+            .overlay button {
+                padding: 16px 40px;
+                background: #e94560;
+                border: 3px solid #c13050;
+                border-radius: 4px;
+                color: #fff;
+                font-family: "Press Start 2P", monospace;
+                font-size: 14px;
+                cursor: pointer;
+                transition: transform 0.1s;
+                margin-top: 12px;
+            }
+
+            .overlay button:hover {
+                transform: scale(1.05);
+            }
+            .overlay button:active {
+                transform: scale(0.95);
+            }
+
+            #win-total {
+                color: #f5a623;
+                font-size: 22px;
+            }
+
+            @keyframes shake {
+                0%,
+                100% {
+                    transform: translateX(0);
+                }
+                20% {
+                    transform: translateX(-8px);
+                }
+                40% {
+                    transform: translateX(8px);
+                }
+                60% {
+                    transform: translateX(-6px);
+                }
+                80% {
+                    transform: translateX(6px);
+                }
+            }
+
+            /* feedback popup */
+            #feedback {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 72px;
+                z-index: 50;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s;
+            }
+
+            #feedback.show {
+                opacity: 1;
+            }
+
+            /* Landscape hint for portrait phones */
+            #rotate-hint {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: #1a1a2e;
+                z-index: 9999;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 20px;
+                color: #f5a623;
+                font-family: "Press Start 2P", monospace;
+                font-size: 12px;
+                text-align: center;
+                line-height: 2;
+            }
+
+            #rotate-hint .phone-icon {
+                font-size: 64px;
+                animation: rotate-phone 2s ease-in-out infinite;
+            }
+
+            @keyframes rotate-phone {
+                0%, 100% { transform: rotate(0deg); }
+                50% { transform: rotate(90deg); }
+            }
+
+            @media (max-width: 640px) and (orientation: portrait) {
+                #rotate-hint { display: flex; }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="rotate-hint">
+            <div class="phone-icon">📱</div>
+            <div>Переверни<br>телефон</div>
+        </div>
+
+        <div id="game-wrapper">
+            <!-- Top bar -->
+            <div id="top-bar">
+                <a id="menu-btn" href="index.html">← МЕНЮ</a>
+                <div id="score-display">Заработано: 0 ₽</div>
+                <div id="customer-counter"></div>
+            </div>
+
+            <!-- Game canvas -->
+            <canvas id="game-canvas" width="960" height="588"></canvas>
+
+            <!-- Message -->
+            <div id="message"></div>
+
+            <!-- Feedback emoji -->
+            <div id="feedback"></div>
+
+            <!-- Terminal numpad panel -->
+            <div id="terminal-panel">
+                <div id="terminal-title">ТЕРМИНАЛ</div>
+                <div id="terminal-display">_ ₽</div>
+                <div id="numpad">
+                    <button class="num-btn" data-val="1">1</button>
+                    <button class="num-btn" data-val="2">2</button>
+                    <button class="num-btn" data-val="3">3</button>
+                    <button class="num-btn" data-val="4">4</button>
+                    <button class="num-btn" data-val="5">5</button>
+                    <button class="num-btn" data-val="6">6</button>
+                    <button class="num-btn" data-val="7">7</button>
+                    <button class="num-btn" data-val="8">8</button>
+                    <button class="num-btn" data-val="9">9</button>
+                    <button class="num-btn btn-clear" data-val="C">C</button>
+                    <button class="num-btn" data-val="0">0</button>
+                    <button class="num-btn btn-pay" data-val="OK">✓</button>
+                </div>
+            </div>
+
+            <!-- Start overlay -->
+            <div class="overlay" id="start-screen">
+                <h1>КОРОЛЬ<br />POSAPI</h1>
+                <p>
+                    Ты — кассир в магазине!<br />
+                    Покупатели подходят с товарами.<br />
+                    Посчитай сумму и введи на терминале!
+                </p>
+                <button id="start-btn">НАЧАТЬ СМЕНУ</button>
+            </div>
+
+            <!-- Win overlay -->
+            <div class="overlay hidden" id="win-screen">
+                <h1>СМЕНА<br />ОКОНЧЕНА!</h1>
+                <h2>Все покупатели обслужены!</h2>
+                <div id="win-total"></div>
+                <button id="restart-btn">ИГРАТЬ ЕЩЁ</button>
+            </div>
+        </div>
+
+        <script>
+            // ============================================================
+            // GAME CONFIG
+            // ============================================================
+            const PRODUCTS = [
+                { name: "Яблоко", emoji: "🍎", price: 2 },
+                { name: "Молоко", emoji: "🥛", price: 5 },
+                { name: "Хлеб", emoji: "🍞", price: 3 },
+                { name: "Сок", emoji: "🧃", price: 4 },
+                { name: "Конфета", emoji: "🍬", price: 1 },
+                { name: "Печенье", emoji: "🍪", price: 3 },
+                { name: "Банан", emoji: "🍌", price: 2 },
+                { name: "Сыр", emoji: "🧀", price: 5 },
+            ];
+
+            const CUSTOMER_COLORS = [
+                { body: "#e94560", head: "#ffccaa" },
+                { body: "#4da6ff", head: "#ffe0bd" },
+                { body: "#53d769", head: "#f5d0a9" },
+                { body: "#f5a623", head: "#ffccaa" },
+                { body: "#a855f7", head: "#ffe0bd" },
+                { body: "#ff6b9d", head: "#f5d0a9" },
+            ];
+
+            const TOTAL_CUSTOMERS = 6;
+            const ITEMS_MIN = 2;
+            const ITEMS_MAX = 4;
+
+            // ============================================================
+            // AUDIO (Web Audio API — simple beeps)
+            // ============================================================
+            let audioCtx = null;
+
+            function initAudio() {
+                if (!audioCtx)
+                    audioCtx = new (
+                        window.AudioContext || window.webkitAudioContext
+                    )();
+            }
+
+            function playBeep(freq, duration, type = "square") {
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.value = 0.15;
+                gain.gain.exponentialRampToValueAtTime(
+                    0.001,
+                    audioCtx.currentTime + duration,
+                );
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            }
+
+            function playSuccess() {
+                playBeep(523, 0.1); // C5
+                setTimeout(() => playBeep(659, 0.1), 100); // E5
+                setTimeout(() => playBeep(784, 0.2), 200); // G5
+            }
+
+            function playError() {
+                playBeep(200, 0.15, "sawtooth");
+                setTimeout(() => playBeep(160, 0.2, "sawtooth"), 150);
+            }
+
+            function playKeypress() {
+                playBeep(800, 0.03);
+            }
+
+            // ============================================================
+            // GAME STATE
+            // ============================================================
+            let customers = [];
+            let currentIdx = 0;
+            let totalEarned = 0;
+            let gameState = "start"; // start | playing | animating | processing | win
+            let inputValue = ""; // numpad input state
+            let particles = [];
+
+            // DOM elements
+            const canvas = document.getElementById("game-canvas");
+            const ctx = canvas.getContext("2d");
+            const scoreDisplay = document.getElementById("score-display");
+            const counterDisplay = document.getElementById("customer-counter");
+            const messageEl = document.getElementById("message");
+            const feedbackEl = document.getElementById("feedback");
+            const terminalDisplay = document.getElementById("terminal-display");
+            const terminalPanel = document.getElementById("terminal-panel");
+            const startScreen = document.getElementById("start-screen");
+            const winScreen = document.getElementById("win-screen");
+            const startBtn = document.getElementById("start-btn");
+            const restartBtn = document.getElementById("restart-btn");
+            const winTotal = document.getElementById("win-total");
+
+            // ============================================================
+            // TERMINAL DISPLAY
+            // ============================================================
+            function updateTerminalDisplay() {
+                if (inputValue.length > 0) {
+                    terminalDisplay.textContent = inputValue + " ₽";
+                } else {
+                    terminalDisplay.textContent = "_ ₽";
+                }
+            }
+
+            // ============================================================
+            // CUSTOMER GENERATION
+            // ============================================================
+            function generateCustomers() {
+                customers = [];
+                for (let i = 0; i < TOTAL_CUSTOMERS; i++) {
+                    const numItems =
+                        ITEMS_MIN +
+                        Math.floor(Math.random() * (ITEMS_MAX - ITEMS_MIN + 1));
+                    const items = [];
+                    for (let j = 0; j < numItems; j++) {
+                        items.push(
+                            PRODUCTS[
+                                Math.floor(Math.random() * PRODUCTS.length)
+                            ],
+                        );
+                    }
+                    const color = CUSTOMER_COLORS[i % CUSTOMER_COLORS.length];
+                    customers.push({
+                        items,
+                        total: items.reduce((s, it) => s + it.price, 0),
+                        color,
+                        x: -80 - i * 100, // start off-screen left
+                        targetX: 0,
+                        y: 200,
+                    });
+                }
+            }
+
+            // ============================================================
+            // PIXEL ART DRAWING
+            // ============================================================
+
+            function drawPixelPerson(x, y, colors, scale = 3) {
+                const s = scale;
+                // Head
+                ctx.fillStyle = colors.head;
+                ctx.fillRect(x + 3 * s, y, 6 * s, 6 * s);
+                // Eyes
+                ctx.fillStyle = "#333";
+                ctx.fillRect(x + 4 * s, y + 2 * s, s, s);
+                ctx.fillRect(x + 7 * s, y + 2 * s, s, s);
+                // Mouth
+                ctx.fillRect(x + 5 * s, y + 4 * s, 2 * s, s);
+                // Body
+                ctx.fillStyle = colors.body;
+                ctx.fillRect(x + 2 * s, y + 6 * s, 8 * s, 8 * s);
+                // Arms
+                ctx.fillRect(x, y + 7 * s, 2 * s, 5 * s);
+                ctx.fillRect(x + 10 * s, y + 7 * s, 2 * s, 5 * s);
+                // Legs
+                ctx.fillStyle = "#445";
+                ctx.fillRect(x + 3 * s, y + 14 * s, 3 * s, 4 * s);
+                ctx.fillRect(x + 7 * s, y + 14 * s, 3 * s, 4 * s);
+                // Shoes
+                ctx.fillStyle = "#222";
+                ctx.fillRect(x + 2 * s, y + 18 * s, 4 * s, 2 * s);
+                ctx.fillRect(x + 6 * s, y + 18 * s, 4 * s, 2 * s);
+            }
+
+            function drawCounter() {
+                // Counter/desk
+                ctx.fillStyle = "#8B5E3C";
+                ctx.fillRect(300, 320, 360, 60);
+                ctx.fillStyle = "#A0522D";
+                ctx.fillRect(300, 310, 360, 14);
+                // Counter legs
+                ctx.fillStyle = "#6B3E2A";
+                ctx.fillRect(310, 380, 20, 80);
+                ctx.fillRect(630, 380, 20, 80);
+
+                // Cash register
+                ctx.fillStyle = "#555";
+                ctx.fillRect(570, 270, 70, 45);
+                ctx.fillStyle = "#333";
+                ctx.fillRect(575, 275, 60, 25);
+                ctx.fillStyle = "#53d769";
+                ctx.font = '10px "Press Start 2P"';
+                ctx.fillText("POS", 585, 290);
+                // Screen glow
+                ctx.fillStyle = "rgba(83, 215, 105, 0.1)";
+                ctx.fillRect(573, 268, 70, 48);
+            }
+
+            function drawItems(items) {
+                const startX = 310;
+                const y = 275;
+                const gap = 80;
+
+                items.forEach((item, i) => {
+                    const x = startX + i * gap;
+                    // Item emoji
+                    ctx.font = "28px serif";
+                    ctx.fillText(item.emoji, x, y);
+                    // Price tag
+                    ctx.fillStyle = "#fff";
+                    ctx.font = '10px "Press Start 2P"';
+                    ctx.fillText(item.price + "₽", x + 4, y + 20);
+                });
+            }
+
+            function drawFloor() {
+                // Checkered floor
+                for (let row = 0; row < 12; row++) {
+                    for (let col = 0; col < 24; col++) {
+                        ctx.fillStyle =
+                            (row + col) % 2 === 0 ? "#1a2744" : "#162038";
+                        ctx.fillRect(col * 40, 380 + row * 20, 40, 20);
+                    }
+                }
+            }
+
+            function drawQueue() {
+                // Draw waiting customers (behind current)
+                for (let i = customers.length - 1; i > currentIdx; i--) {
+                    const c = customers[i];
+                    const queuePos = i - currentIdx;
+                    const tx = 100 - queuePos * 80;
+                    const cx = c.x + (tx - c.x) * 0.08;
+                    c.x = cx;
+                    if (cx > -60 && cx < 300) {
+                        drawPixelPerson(cx, c.y, c.color);
+                    }
+                }
+
+                // Draw current customer
+                if (currentIdx < customers.length) {
+                    const c = customers[currentIdx];
+                    const cx = c.x + (c.targetX - c.x) * 0.08;
+                    c.x = cx;
+                    drawPixelPerson(cx, c.y, c.color, 3.5);
+                }
+            }
+
+            // ============================================================
+            // SCENE RENDERING
+            // ============================================================
+            function drawScene() {
+                // Background
+                ctx.fillStyle = "#0f3460";
+                ctx.fillRect(0, 0, 960, 588);
+
+                // Wall decoration
+                ctx.fillStyle = "#16213e";
+                ctx.fillRect(0, 0, 960, 160);
+
+                // Wall banner
+                ctx.fillStyle = "#e94560";
+                ctx.fillRect(350, 20, 260, 40);
+                ctx.fillStyle = "#fff";
+                ctx.font = '12px "Press Start 2P"';
+                ctx.fillText("МАГАЗИН", 410, 47);
+
+                // Shelf
+                ctx.fillStyle = "#8B5E3C";
+                ctx.fillRect(30, 80, 200, 8);
+                ctx.fillRect(30, 130, 200, 8);
+                // Items on shelf (decoration)
+                ctx.font = "20px serif";
+                ctx.fillText("🥫", 50, 78);
+                ctx.fillText("🫙", 90, 78);
+                ctx.fillText("🧴", 130, 78);
+                ctx.fillText("📦", 170, 78);
+                ctx.fillText("🥤", 50, 128);
+                ctx.fillText("🧂", 90, 128);
+                ctx.fillText("🫒", 130, 128);
+                ctx.fillText("🧈", 170, 128);
+
+                drawFloor();
+                drawCounter();
+
+                // Draw items on counter for current customer
+                if ((gameState === "playing" || gameState === "processing") && currentIdx < customers.length) {
+                    drawItems(customers[currentIdx].items);
+                }
+
+                drawQueue();
+
+                // Draw flying particles
+                if (particles.length > 0) {
+                    updateAndDrawParticles();
+                }
+            }
+
+            // ============================================================
+            // ANIMATION LOOP
+            // ============================================================
+            let animFrameId = null;
+
+            function gameLoop() {
+                drawScene();
+                animFrameId = requestAnimationFrame(gameLoop);
+            }
+
+            // ============================================================
+            // GAME LOGIC
+            // ============================================================
+            function startGame() {
+                initAudio();
+                currentIdx = 0;
+                totalEarned = 0;
+                gameState = "playing";
+                generateCustomers();
+
+                // Position first customer target
+                customers[currentIdx].targetX = 200;
+
+                updateUI();
+                startScreen.classList.add("hidden");
+                winScreen.classList.add("hidden");
+                inputValue = "";
+                updateTerminalDisplay();
+                setMessage("Посчитай сумму товаров и введи на терминале!");
+
+                if (!animFrameId) gameLoop();
+            }
+
+            function updateUI() {
+                scoreDisplay.textContent = "Заработано: " + totalEarned + " ₽";
+                if (currentIdx < customers.length) {
+                    counterDisplay.textContent =
+                        "Покупатель " +
+                        (currentIdx + 1) +
+                        "/" +
+                        TOTAL_CUSTOMERS;
+                }
+            }
+
+            function setMessage(text) {
+                messageEl.textContent = text;
+            }
+
+            function showFeedback(emoji, duration = 800) {
+                feedbackEl.textContent = emoji;
+                feedbackEl.classList.add("show");
+                setTimeout(() => feedbackEl.classList.remove("show"), duration);
+            }
+
+            // ============================================================
+            // PROCESSING ANIMATION
+            // ============================================================
+            function spawnParticles(direction) {
+                for (let i = 0; i < 15; i++) {
+                    particles.push({
+                        x: 720 + Math.random() * 40,
+                        y: 240 + Math.random() * 30,
+                        vx: (Math.random() - 0.5) * 3,
+                        vy: direction === "up" ? -(2 + Math.random() * 3) : (2 + Math.random() * 3),
+                        life: 60 + Math.random() * 30,
+                    });
+                }
+            }
+
+            function updateAndDrawParticles() {
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life--;
+                    const alpha = Math.max(0, p.life / 90);
+                    ctx.fillStyle = `rgba(83, 215, 105, ${alpha})`;
+                    ctx.fillRect(p.x, p.y, 4, 4);
+                    if (p.life <= 0) particles.splice(i, 1);
+                }
+            }
+
+            function startProcessingAnimation(input, correct) {
+                gameState = "processing";
+                terminalDisplay.classList.add("processing");
+
+                const stages = [
+                    "ОТПРАВКА...",
+                    "[██░░░░░░]",
+                    "ПРОВЕРКА...",
+                    "[█████░░░]",
+                    "СПИСАНИЕ...",
+                    "[████████]",
+                ];
+                let step = 0;
+
+                // Spawn upward particles immediately
+                spawnParticles("up");
+
+                terminalDisplay.textContent = stages[0];
+                playBeep(600, 0.03);
+
+                const iv = setInterval(() => {
+                    step++;
+                    if (step >= stages.length) {
+                        clearInterval(iv);
+                        terminalDisplay.classList.remove("processing");
+                        resolvePayment(input, correct);
+                        return;
+                    }
+                    terminalDisplay.textContent = stages[step];
+                    playBeep(600, 0.03);
+                    // Spawn downward particles for phase 2
+                    if (step === 3) spawnParticles("down");
+                }, 350);
+            }
+
+            function resolvePayment(input, correct) {
+                if (input === correct) {
+                    playSuccess();
+                    showFeedback("✅");
+                    terminalDisplay.classList.add("success");
+                    totalEarned += correct;
+                    setMessage("Верно! +" + correct + " ₽");
+                    updateUI();
+
+                    customers[currentIdx].targetX = 1100;
+                    gameState = "animating";
+
+                    setTimeout(() => {
+                        terminalDisplay.classList.remove("success");
+                        currentIdx++;
+
+                        if (currentIdx >= customers.length) {
+                            gameState = "win";
+                            winTotal.textContent = "Заработано: " + totalEarned + " ₽";
+                            winScreen.classList.remove("hidden");
+                            return;
+                        }
+
+                        customers[currentIdx].targetX = 200;
+                        gameState = "playing";
+                        inputValue = "";
+                        updateTerminalDisplay();
+                        setMessage("Следующий покупатель! Считай сумму!");
+                        updateUI();
+                    }, 1200);
+                } else {
+                    playError();
+                    showFeedback("❌");
+                    terminalDisplay.classList.add("error");
+                    setMessage("Неверно! Попробуй ещё раз!");
+                    setTimeout(() => {
+                        terminalDisplay.classList.remove("error");
+                        inputValue = "";
+                        updateTerminalDisplay();
+                        gameState = "playing";
+                    }, 600);
+                }
+            }
+
+            function checkPayment() {
+                if (gameState !== "playing") return;
+                if (currentIdx >= customers.length) return;
+
+                const input = parseInt(inputValue, 10);
+                const correct = customers[currentIdx].total;
+
+                if (isNaN(input) || input === 0) {
+                    setMessage("Введи сумму!");
+                    playError();
+                    return;
+                }
+
+                startProcessingAnimation(input, correct);
+            }
+
+            // ============================================================
+            // EVENT LISTENERS
+            // ============================================================
+            startBtn.addEventListener("click", startGame);
+            restartBtn.addEventListener("click", startGame);
+
+            // Numpad button clicks
+            document.getElementById("numpad").addEventListener("click", (e) => {
+                const btn = e.target.closest(".num-btn");
+                if (!btn) return;
+                if (gameState !== "playing") return;
+
+                const val = btn.dataset.val;
+                playKeypress();
+
+                if (val === "C") {
+                    inputValue = "";
+                } else if (val === "OK") {
+                    checkPayment();
+                    return;
+                } else {
+                    // Digit — cap at 3 digits to prevent absurd numbers
+                    if (inputValue.length < 3) {
+                        inputValue += val;
+                    }
+                }
+                updateTerminalDisplay();
+            });
+
+            // Keyboard support for desktop
+            document.addEventListener("keydown", (e) => {
+                if (gameState !== "playing") return;
+
+                if (e.key >= "0" && e.key <= "9") {
+                    playKeypress();
+                    if (inputValue.length < 3) {
+                        inputValue += e.key;
+                    }
+                    updateTerminalDisplay();
+                } else if (e.key === "Backspace" || e.key === "Delete") {
+                    playKeypress();
+                    inputValue = inputValue.slice(0, -1);
+                    updateTerminalDisplay();
+                } else if (e.key === "Enter") {
+                    playKeypress();
+                    checkPayment();
+                } else if (e.key === "Escape" || e.key === "c" || e.key === "C") {
+                    playKeypress();
+                    inputValue = "";
+                    updateTerminalDisplay();
+                }
+            });
+
+            // ============================================================
+            // RESPONSIVE SCALING
+            // ============================================================
+            const gameWrapper = document.getElementById('game-wrapper');
+
+            function resizeGame() {
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                const gameW = 960;
+                const gameH = 640;
+                const scaleX = vw / gameW;
+                const scaleY = vh / gameH;
+                const scale = Math.min(scaleX, scaleY);
+                gameWrapper.style.transform = 'scale(' + scale + ')';
+                gameWrapper.style.transformOrigin = 'top left';
+                gameWrapper.style.position = 'absolute';
+                gameWrapper.style.left = Math.max(0, (vw - gameW * scale) / 2) + 'px';
+                gameWrapper.style.top = Math.max(0, (vh - gameH * scale) / 2) + 'px';
+            }
+
+            window.addEventListener('resize', resizeGame);
+            window.addEventListener('orientationchange', () => setTimeout(resizeGame, 100));
+            resizeGame();
+
+            // Start with initial render
+            drawScene();
+        </script>
+    </body>
+</html>
