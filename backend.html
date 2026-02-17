@@ -2,7 +2,10 @@
 <html lang="ru">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
         <title>Бэкенд-инженер</title>
         <link
             href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
@@ -162,7 +165,8 @@
                 transform: scale(0.95);
             }
 
-            #lose-score {
+            #lose-score,
+            #win-score {
                 color: #f5a623;
                 font-size: 22px;
             }
@@ -191,19 +195,26 @@
             }
 
             @keyframes rotate-phone {
-                0%, 100% { transform: rotate(0deg); }
-                50% { transform: rotate(90deg); }
+                0%,
+                100% {
+                    transform: rotate(0deg);
+                }
+                50% {
+                    transform: rotate(90deg);
+                }
             }
 
             @media (max-width: 640px) and (orientation: portrait) {
-                #rotate-hint { display: flex; }
+                #rotate-hint {
+                    display: flex;
+                }
             }
         </style>
     </head>
     <body>
         <div id="rotate-hint">
             <div class="phone-icon">📱</div>
-            <div>Переверни<br>телефон</div>
+            <div>Переверни<br />телефон</div>
         </div>
 
         <div id="game-wrapper">
@@ -228,6 +239,14 @@
                 <button id="start-btn">НАЧАТЬ РАБОТУ</button>
             </div>
 
+            <!-- Win overlay -->
+            <div class="overlay hidden" id="win-screen">
+                <h1>СМЕНА<br />ОКОНЧЕНА!</h1>
+                <h2>Все проблемы решены!</h2>
+                <div id="win-score"></div>
+                <button id="play-again-btn">ИГРАТЬ ЕЩЁ</button>
+            </div>
+
             <!-- Lose overlay -->
             <div class="overlay hidden" id="lose-screen">
                 <h1>СЕРВИС<br />ЛЁГ!</h1>
@@ -242,24 +261,30 @@
             // GAME CONFIG
             // ============================================================
             const PROBLEM_TYPES = [
-                { zone: "top",    emoji: "🔥", label: "CPU",   color: "#ff6b35" },
-                { zone: "left",   emoji: "🐛", label: "БАГ",   color: "#e94560" },
-                { zone: "right",  emoji: "🔌", label: "СЕТЬ",  color: "#4da6ff" },
-                { zone: "bottom", emoji: "💾", label: "ДИСК",  color: "#a855f7" },
+                { zone: "top", emoji: "🔥", label: "CPU", color: "#ff6b35" },
+                { zone: "left", emoji: "🐛", label: "БАГ", color: "#e94560" },
+                { zone: "right", emoji: "🔌", label: "СЕТЬ", color: "#4da6ff" },
+                {
+                    zone: "bottom",
+                    emoji: "💾",
+                    label: "ДИСК",
+                    color: "#a855f7",
+                },
             ];
 
             // Zone positions (center x,y for each zone)
             const ZONES = {
-                top:    { x: 480, y: 60  },
-                left:   { x: 100, y: 280 },
-                right:  { x: 860, y: 280 },
+                top: { x: 480, y: 60 },
+                left: { x: 100, y: 280 },
+                right: { x: 860, y: 280 },
                 bottom: { x: 480, y: 500 },
             };
 
             const PROBLEM_RADIUS = 40;
-            const PROBLEM_LIFETIME = 3500; // ms before problem expires
-            const SPAWN_INTERVAL = 2800;   // ms between spawns
+            const PROBLEM_LIFETIME = 4000; // ms before problem expires
+            const SPAWN_INTERVAL = 2800; // ms between spawns
             const MAX_LIVES = 3;
+            const WIN_SCORE = 20;
 
             // ============================================================
             // AUDIO
@@ -268,7 +293,9 @@
 
             function initAudio() {
                 if (!audioCtx)
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    audioCtx = new (
+                        window.AudioContext || window.webkitAudioContext
+                    )();
             }
 
             function playBeep(freq, duration, type = "square") {
@@ -278,7 +305,10 @@
                 osc.type = type;
                 osc.frequency.value = freq;
                 gain.gain.value = 0.15;
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                gain.gain.exponentialRampToValueAtTime(
+                    0.001,
+                    audioCtx.currentTime + duration,
+                );
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start();
@@ -306,18 +336,25 @@
                 setTimeout(() => playBeep(120, 0.4, "sawtooth"), 350);
             }
 
+            function playWin() {
+                playBeep(523, 0.1);
+                setTimeout(() => playBeep(659, 0.1), 100);
+                setTimeout(() => playBeep(784, 0.1), 200);
+                setTimeout(() => playBeep(1047, 0.3), 300);
+            }
+
             // ============================================================
             // GAME STATE
             // ============================================================
             let score = 0;
             let lives = MAX_LIVES;
             let gameState = "start"; // start | playing | gameover
-            let problems = [];       // active problems on screen
-            let fixEffects = [];     // visual fix effects
-            let loseEffects = [];    // visual lose-life effects
+            let problems = []; // active problems on screen
+            let fixEffects = []; // visual fix effects
+            let loseEffects = []; // visual lose-life effects
             let spawnTimer = null;
             let frameTime = 0;
-            let serverLedPhase = 0;  // for blinking server LEDs
+            let serverLedPhase = 0; // for blinking server LEDs
 
             // Monitoring graph data
             let graphData = [];
@@ -331,8 +368,11 @@
             const startScreen = document.getElementById("start-screen");
             const loseScreen = document.getElementById("lose-screen");
             const loseScore = document.getElementById("lose-score");
+            const winScreen = document.getElementById("win-screen");
+            const winScore = document.getElementById("win-score");
             const startBtn = document.getElementById("start-btn");
             const restartBtn = document.getElementById("restart-btn");
+            const playAgainBtn = document.getElementById("play-again-btn");
 
             // ============================================================
             // PIXEL ART DRAWING
@@ -357,16 +397,40 @@
 
                     // Ventilation grilles
                     for (let g = 0; g < 4; g++) {
-                        drawPixelRect(x + 12 + g * 14, uy + 8, 10, 2, "#444460");
-                        drawPixelRect(x + 12 + g * 14, uy + 14, 10, 2, "#444460");
-                        drawPixelRect(x + 12 + g * 14, uy + 20, 10, 2, "#444460");
+                        drawPixelRect(
+                            x + 12 + g * 14,
+                            uy + 8,
+                            10,
+                            2,
+                            "#444460",
+                        );
+                        drawPixelRect(
+                            x + 12 + g * 14,
+                            uy + 14,
+                            10,
+                            2,
+                            "#444460",
+                        );
+                        drawPixelRect(
+                            x + 12 + g * 14,
+                            uy + 20,
+                            10,
+                            2,
+                            "#444460",
+                        );
                     }
 
                     // LED indicators (blinking)
-                    const ledPhase = (serverLedPhase + i * 17 + (side === "right" ? 37 : 0)) % 60;
+                    const ledPhase =
+                        (serverLedPhase +
+                            i * 17 +
+                            (side === "right" ? 37 : 0)) %
+                        60;
                     const led1 = ledPhase < 40 ? "#53d769" : "#2a5a30";
-                    const led2 = (ledPhase + 20) % 60 < 45 ? "#53d769" : "#2a5a30";
-                    const led3 = (ledPhase + 10) % 60 < 30 ? "#f5a623" : "#5a4a20";
+                    const led2 =
+                        (ledPhase + 20) % 60 < 45 ? "#53d769" : "#2a5a30";
+                    const led3 =
+                        (ledPhase + 10) % 60 < 30 ? "#f5a623" : "#5a4a20";
 
                     drawPixelRect(x + 60, uy + 30, 4, 4, led1);
                     drawPixelRect(x + 60, uy + 38, 4, 4, led2);
@@ -380,61 +444,66 @@
 
             function drawDesk(x, y) {
                 // Desk top
-                drawPixelRect(x, y, 240, 12, "#8B5E3C");
-                drawPixelRect(x + 2, y + 2, 236, 8, "#A0522D");
+                drawPixelRect(x, y, 340, 14, "#8B5E3C");
+                drawPixelRect(x + 2, y + 2, 336, 10, "#A0522D");
                 // Desk legs
-                drawPixelRect(x + 10, y + 12, 12, 80, "#6B3E2A");
-                drawPixelRect(x + 218, y + 12, 12, 80, "#6B3E2A");
+                drawPixelRect(x + 10, y + 14, 14, 80, "#6B3E2A");
+                drawPixelRect(x + 316, y + 14, 14, 80, "#6B3E2A");
                 // Desk front panel
-                drawPixelRect(x + 10, y + 12, 220, 6, "#7B4E3A");
+                drawPixelRect(x + 10, y + 14, 320, 6, "#7B4E3A");
             }
 
             function drawMonitor(x, y) {
                 // Monitor frame
-                drawPixelRect(x, y, 140, 100, "#333");
-                drawPixelRect(x + 4, y + 4, 132, 80, "#0a0a23");
+                drawPixelRect(x, y, 190, 140, "#333");
+                drawPixelRect(x + 5, y + 5, 180, 114, "#0a0a23");
                 // Stand
-                drawPixelRect(x + 55, y + 100, 30, 12, "#444");
-                drawPixelRect(x + 40, y + 110, 60, 6, "#555");
+                drawPixelRect(x + 75, y + 140, 40, 14, "#444");
+                drawPixelRect(x + 55, y + 152, 80, 8, "#555");
 
                 // "Code" on screen
                 const codeLines = [
-                    { w: 40, c: "#a855f7" },
+                    { w: 55, c: "#a855f7" },
+                    { w: 80, c: "#53d769" },
+                    { w: 48, c: "#4da6ff" },
+                    { w: 75, c: "#f5a623" },
                     { w: 60, c: "#53d769" },
-                    { w: 35, c: "#4da6ff" },
-                    { w: 55, c: "#f5a623" },
-                    { w: 45, c: "#53d769" },
-                    { w: 30, c: "#e94560" },
+                    { w: 42, c: "#e94560" },
+                    { w: 70, c: "#a855f7" },
+                    { w: 50, c: "#4da6ff" },
                 ];
                 codeLines.forEach((line, i) => {
-                    drawPixelRect(x + 10, y + 10 + i * 12, line.w, 6, line.c);
+                    drawPixelRect(x + 12, y + 12 + i * 13, line.w, 7, line.c);
                 });
 
                 // Screen glow
                 ctx.fillStyle = "rgba(83, 215, 105, 0.05)";
-                ctx.fillRect(x + 4, y + 4, 132, 80);
+                ctx.fillRect(x + 5, y + 5, 180, 114);
             }
 
             function drawMonitoringScreen(x, y) {
-                // Small monitoring monitor
-                drawPixelRect(x, y, 100, 70, "#333");
-                drawPixelRect(x + 3, y + 3, 94, 54, "#0a0a1a");
+                // Monitoring monitor
+                drawPixelRect(x, y, 130, 100, "#333");
+                drawPixelRect(x + 4, y + 4, 122, 78, "#0a0a1a");
                 // Stand
-                drawPixelRect(x + 38, y + 70, 24, 8, "#444");
-                drawPixelRect(x + 30, y + 76, 40, 4, "#555");
+                drawPixelRect(x + 48, y + 100, 34, 10, "#444");
+                drawPixelRect(x + 35, y + 108, 60, 6, "#555");
 
                 // "MONITORING" label
                 ctx.fillStyle = "#53d769";
-                ctx.font = '5px "Press Start 2P"';
-                ctx.fillText("MON", x + 8, y + 14);
+                ctx.font = '7px "Press Start 2P"';
+                ctx.fillText("MON", x + 10, y + 18);
 
                 // Graph line
                 ctx.beginPath();
                 ctx.strokeStyle = "#53d769";
                 ctx.lineWidth = 2;
-                for (let i = 0; i < 80; i++) {
-                    const gx = x + 7 + i;
-                    const gy = y + 24 + graphData[i] * 26;
+                for (let i = 0; i < 100; i++) {
+                    const gx = x + 10 + i;
+                    const gy =
+                        y +
+                        30 +
+                        graphData[Math.min(i, graphData.length - 1)] * 40;
                     if (i === 0) ctx.moveTo(gx, gy);
                     else ctx.lineTo(gx, gy);
                 }
@@ -443,11 +512,11 @@
 
                 // Screen glow
                 ctx.fillStyle = "rgba(83, 215, 105, 0.04)";
-                ctx.fillRect(x + 3, y + 3, 94, 54);
+                ctx.fillRect(x + 4, y + 4, 122, 78);
             }
 
             function drawEngineer(x, y) {
-                const s = 3.5;
+                const s = 5;
                 // Head
                 ctx.fillStyle = "#ffccaa";
                 ctx.fillRect(x + 3 * s, y, 6 * s, 6 * s);
@@ -489,7 +558,7 @@
                 ctx.fillRect(x + 1 * s, y + 14 * s, 10 * s, 3 * s);
                 ctx.fillStyle = "#555";
                 ctx.fillRect(x - 0.5 * s, y + 6 * s, 1.5 * s, 11 * s); // chair back left
-                ctx.fillRect(x + 11 * s, y + 6 * s, 1.5 * s, 11 * s);  // chair back right
+                ctx.fillRect(x + 11 * s, y + 6 * s, 1.5 * s, 11 * s); // chair back right
                 // Chair legs
                 ctx.fillStyle = "#333";
                 ctx.fillRect(x + 3 * s, y + 17 * s, 2 * s, 3 * s);
@@ -500,7 +569,8 @@
                 // Dark tech floor with grid
                 for (let row = 0; row < 12; row++) {
                     for (let col = 0; col < 24; col++) {
-                        ctx.fillStyle = (row + col) % 2 === 0 ? "#141428" : "#121224";
+                        ctx.fillStyle =
+                            (row + col) % 2 === 0 ? "#141428" : "#121224";
                         ctx.fillRect(col * 40, 440 + row * 14, 40, 14);
                     }
                 }
@@ -546,7 +616,13 @@
 
                 // Timer ring
                 ctx.beginPath();
-                ctx.arc(z.x, z.y, size + 4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * progress);
+                ctx.arc(
+                    z.x,
+                    z.y,
+                    size + 4,
+                    -Math.PI / 2,
+                    -Math.PI / 2 + Math.PI * 2 * progress,
+                );
                 ctx.strokeStyle = `rgb(${r}, ${g}, 50)`;
                 ctx.lineWidth = 4;
                 ctx.stroke();
@@ -665,16 +741,16 @@
                 drawServerRack(850, 120, "right");
 
                 // Desk
-                drawDesk(360, 340);
+                drawDesk(310, 340);
 
                 // Main monitor
-                drawMonitor(400, 220);
+                drawMonitor(330, 180);
 
                 // Monitoring screen
-                drawMonitoringScreen(500, 240);
+                drawMonitoringScreen(530, 200);
 
                 // Engineer
-                drawEngineer(440, 260);
+                drawEngineer(430, 230);
 
                 // Zone hints (subtle)
                 if (gameState === "playing" && problems.length === 0) {
@@ -686,13 +762,13 @@
                 }
 
                 // Draw problems
-                problems.forEach(p => drawProblem(p));
+                problems.forEach((p) => drawProblem(p));
 
                 // Draw fix effects
-                fixEffects = fixEffects.filter(e => drawFixEffect(e));
+                fixEffects = fixEffects.filter((e) => drawFixEffect(e));
 
                 // Draw lose effects
-                loseEffects = loseEffects.filter(e => drawLoseEffect(e));
+                loseEffects = loseEffects.filter((e) => drawLoseEffect(e));
 
                 serverLedPhase = (serverLedPhase + 1) % 60;
             }
@@ -711,7 +787,9 @@
                     const noise = (Math.random() - 0.5) * 0.2;
                     const lastVal = graphData[graphData.length - 1];
                     const spike = problems.length > 0 ? 0.3 : 0;
-                    graphData.push(Math.max(0, Math.min(1, lastVal + noise + spike * 0.1)));
+                    graphData.push(
+                        Math.max(0, Math.min(1, lastVal + noise + spike * 0.1)),
+                    );
                 }
 
                 // Check expired problems
@@ -720,7 +798,11 @@
                         const elapsed = Date.now() - problems[i].spawnTime;
                         if (elapsed >= PROBLEM_LIFETIME) {
                             const z = ZONES[problems[i].zone];
-                            loseEffects.push({ x: z.x, y: z.y, time: Date.now() });
+                            loseEffects.push({
+                                x: z.x,
+                                y: z.y,
+                                time: Date.now(),
+                            });
                             problems.splice(i, 1);
                             loseLife();
                         }
@@ -750,13 +832,14 @@
                 updateUI();
                 startScreen.classList.add("hidden");
                 loseScreen.classList.add("hidden");
+                winScreen.classList.add("hidden");
 
                 if (!animFrameId) gameLoop();
                 startSpawning();
             }
 
             function updateUI() {
-                scoreDisplay.textContent = "Очки: " + score;
+                scoreDisplay.textContent = "Очки: " + score + "/" + WIN_SCORE;
                 let hearts = "";
                 for (let i = 0; i < MAX_LIVES; i++) {
                     hearts += i < lives ? "❤" : "🖤";
@@ -790,15 +873,16 @@
                 if (gameState !== "playing") return;
 
                 // Pick a random zone that doesn't already have an active problem
-                const occupiedZones = problems.map(p => p.zone);
+                const occupiedZones = problems.map((p) => p.zone);
                 const freeZones = ["top", "left", "right", "bottom"].filter(
-                    z => !occupiedZones.includes(z)
+                    (z) => !occupiedZones.includes(z),
                 );
 
                 if (freeZones.length === 0) return;
 
-                const zone = freeZones[Math.floor(Math.random() * freeZones.length)];
-                const type = PROBLEM_TYPES.find(t => t.zone === zone);
+                const zone =
+                    freeZones[Math.floor(Math.random() * freeZones.length)];
+                const type = PROBLEM_TYPES.find((t) => t.zone === zone);
 
                 problems.push({
                     zone: type.zone,
@@ -830,7 +914,7 @@
             function tryFixZone(zone) {
                 if (gameState !== "playing") return;
 
-                const idx = problems.findIndex(p => p.zone === zone);
+                const idx = problems.findIndex((p) => p.zone === zone);
                 if (idx === -1) return;
 
                 const z = ZONES[zone];
@@ -839,6 +923,22 @@
                 score++;
                 playFix();
                 updateUI();
+
+                if (score >= WIN_SCORE) {
+                    winGame();
+                }
+            }
+
+            function winGame() {
+                gameState = "win";
+                stopSpawning();
+                problems = [];
+                playWin();
+
+                setTimeout(() => {
+                    winScore.textContent = "Починок: " + score;
+                    winScreen.classList.remove("hidden");
+                }, 600);
             }
 
             function getZoneFromClick(canvasX, canvasY) {
@@ -859,6 +959,7 @@
             // ============================================================
             startBtn.addEventListener("click", startGame);
             restartBtn.addEventListener("click", startGame);
+            playAgainBtn.addEventListener("click", startGame);
 
             // Canvas click/tap
             canvas.addEventListener("click", (e) => {
@@ -881,10 +982,22 @@
                 if (gameState !== "playing") return;
 
                 const keyMap = {
-                    "1": "top",    "w": "top",    "W": "top",    "ArrowUp": "top",
-                    "2": "left",   "a": "left",   "A": "left",   "ArrowLeft": "left",
-                    "3": "right",  "d": "right",  "D": "right",  "ArrowRight": "right",
-                    "4": "bottom", "s": "bottom",  "S": "bottom", "ArrowDown": "bottom",
+                    1: "top",
+                    w: "top",
+                    W: "top",
+                    ArrowUp: "top",
+                    2: "left",
+                    a: "left",
+                    A: "left",
+                    ArrowLeft: "left",
+                    3: "right",
+                    d: "right",
+                    D: "right",
+                    ArrowRight: "right",
+                    4: "bottom",
+                    s: "bottom",
+                    S: "bottom",
+                    ArrowDown: "bottom",
                 };
 
                 const zone = keyMap[e.key];
@@ -897,7 +1010,7 @@
             // ============================================================
             // RESPONSIVE SCALING
             // ============================================================
-            const gameWrapper = document.getElementById('game-wrapper');
+            const gameWrapper = document.getElementById("game-wrapper");
 
             function resizeGame() {
                 const vw = window.innerWidth;
@@ -907,15 +1020,19 @@
                 const scaleX = vw / gameW;
                 const scaleY = vh / gameH;
                 const scale = Math.min(scaleX, scaleY);
-                gameWrapper.style.transform = 'scale(' + scale + ')';
-                gameWrapper.style.transformOrigin = 'top left';
-                gameWrapper.style.position = 'absolute';
-                gameWrapper.style.left = Math.max(0, (vw - gameW * scale) / 2) + 'px';
-                gameWrapper.style.top = Math.max(0, (vh - gameH * scale) / 2) + 'px';
+                gameWrapper.style.transform = "scale(" + scale + ")";
+                gameWrapper.style.transformOrigin = "top left";
+                gameWrapper.style.position = "absolute";
+                gameWrapper.style.left =
+                    Math.max(0, (vw - gameW * scale) / 2) + "px";
+                gameWrapper.style.top =
+                    Math.max(0, (vh - gameH * scale) / 2) + "px";
             }
 
-            window.addEventListener('resize', resizeGame);
-            window.addEventListener('orientationchange', () => setTimeout(resizeGame, 100));
+            window.addEventListener("resize", resizeGame);
+            window.addEventListener("orientationchange", () =>
+                setTimeout(resizeGame, 100),
+            );
             resizeGame();
 
             // Start with initial render
